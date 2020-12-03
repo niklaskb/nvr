@@ -1,0 +1,28 @@
+{
+  "name": "NVR Server",
+  "version": "1.0",
+  "slug": "nvr_server",
+  "description": "NVR Server",
+  "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
+  "startup": "before",
+  "boot": "auto",
+  "options": {
+    "camera_url_full": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/101/",
+    "camera_url_low": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/102/",
+    "max_unread_frames": 300,
+    "capture_timeout": 1800,
+    "file_path": "/media/videos/"
+  },
+  "schema": {
+    "camera_url_full": "str",
+    "camera_url_low": "str",
+    "max_unread_frames": "int",
+    "capture_timeout": "int",
+    "file_path": "str"
+  },
+  "ports": {
+    "5000/tcp": 5000
+  },
+  "map": ["config", "media:rw", "ssl"],
+  "tmpfs":"size=100m,rw"
+}
