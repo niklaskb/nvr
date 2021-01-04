@@ -36,14 +36,15 @@ class RemoteCamera(object):
 
     def get_frame(self):
         self._start_stream_if_not_started()
-        time.sleep(0.2)
 
-        with self._state_lock:
-            self.unread_frames = 0
-
-        #width = 1280
-        #height = 720
-        #resized = cv2.resize(current_frame, (width, height), interpolation = cv2.INTER_AREA)
+        while True:
+            with self._state_lock:
+                if self.unread_frames == 0:
+                    time.sleep(0.02)
+                else:
+                    self.unread_frames = 0
+                    break
+                
         frame = bytearray(cv2.imencode(".jpeg", self.frame)[1])
         return frame
 
@@ -66,7 +67,7 @@ class RemoteCamera(object):
             with self._state_lock:
                 if self.unread_frames > 0:
                     break
-            time.sleep(0.1)
+            time.sleep(0.02)
 
         app.logger.info("Camera stream started")
 
@@ -81,7 +82,10 @@ class RemoteCamera(object):
                     app.logger.info("Stopping camera stream (no consumer)")
                     break
 
-            self.success, self.frame = self.video_capture.read()
+            success, self.frame = self.video_capture.read()
+            if not success:
+                app.logger.info("Failed to read frame")
+                break
             with self._state_lock:
                 self.unread_frames = self.unread_frames + 1
         self.video_capture.release()
