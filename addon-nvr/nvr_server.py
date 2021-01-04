@@ -141,6 +141,28 @@ def get_videos():
 <html>
     <head>
         <title>Recordings</title>
+        <style>
+            body {
+                background: #FFF;
+                color: #1c1c1c;
+                font-family: Roboto,sans-serif;
+                font-weight: 400;
+                
+            }
+            a {
+                color: #1c1c1c;
+                text-decoration: none;
+            }
+            a:hover, a:active {
+                text-decoration: underline;
+            }
+            @media (prefers-color-scheme: dark) {
+                body, a {
+                    background: #1c1c1c;
+                    color: #FFF;
+                }
+            }
+        </style>
     </head>
     <body>
         <ul>
@@ -162,31 +184,6 @@ def get_videos():
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
     return send_from_directory(file_path, file, cache_timeout = 0)
-
-@app.route("/video/stream")
-def get_video_stream():
-    html = """
-<!DOCTYPE html>
-<html>
-    <head>
-        <title>Video</title>
-    </head>
-    <body style="margin:0; height:100%; background-color: #000;">
-        <script>
-            function sleep(ms) {
-                return new Promise(resolve => setTimeout(resolve, ms));
-            }
-
-            async function reload() {
-                await sleep(1000);
-                window.location.reload();
-            }
-        </script>
-        <a target="_blank" href="./stream"><img id="video-image" onerror="reload();" src="./stream/mjpeg" style="width:100%;" alt="video"></img></a>
-    </body>
-</html>
-"""
-    return html
 
 def latest_file(type):
     files = list(filter(lambda x: x.endswith(type), listdir(file_path)))
