@@ -10,6 +10,7 @@ import time
 import pytz
 from os import listdir
 import subprocess, io
+import ipaddress
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -138,6 +139,15 @@ class RemoteCamera(object):
         else:
             return None
 
+def require_internal(func):
+    def wrapper_require_internal(*args, **kwargs):
+        if ipaddress.ip_address(request.remote_addr) in ipaddress.ip_network("172.0.0.0/8") or ipaddress.ip_address("127.0.0.1"):
+            return func(*args, **kwargs)
+        return ('Unauthorized', 401)
+    wrapper_require_internal.__name__ = func.__name__ + "_wrapper"
+    return wrapper_require_internal
+
+
 @app.route("/videos")
 def get_videos():
     html = """
@@ -214,11 +224,13 @@ def get_images_latest():
         return "Not found", 404
 
 @app.route("/capture/start")
+@require_internal
 def get_capture_start():
     camera.capture_start()
     return "OK"
 
 @app.route("/capture/end")
+@require_internal
 def get_capture_end():
     camera.capture_end()
     return "OK"
@@ -229,6 +241,7 @@ def http_stream(camera):
         yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
 @app.route("/video/stream/mjpeg")
+@require_internal
 def get_video_stream_mjpeg():
     return Response(http_stream(camera),
         mimetype="multipart/x-mixed-replace; boundary=frame")
