@@ -91,12 +91,16 @@ RUN apk add --update --no-cache \
     rm -rf /tmp/opencv-${OPENCV_VERSION} && \
     rm -vrf /var/cache/apk/*
 
-COPY nvr_server.py /
+# Copy data for add-on
+COPY __init__.py \
+    capture_camera.py \
+    nvr_server.py \
+    run.sh \
+    stream_camera.py \
+    /
 
 RUN mkdir -p /media/videos
 
-# Copy data for add-on
-COPY run.sh /
 RUN chmod a+x /run.sh
 
 CMD [ "/run.sh" ]

@@ -7,18 +7,24 @@
   "startup": "application",
   "boot": "auto",
   "options": {
-    "camera_url_full": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/101/",
-    "camera_url_low": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/102/",
+    "camera_url_capture": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/101/",
+    "camera_url_stream": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/102/",
     "max_unread_frames": 300,
     "capture_timeout": 1800,
-    "file_path": "/media/videos/"
+    "file_path": "/media/videos/",
+    "frame_sleep": 0.02,
+    "stream_width": 640,
+    "stream_height": 360
   },
   "schema": {
-    "camera_url_full": "str",
-    "camera_url_low": "str",
+    "camera_url_capture": "str",
+    "camera_url_stream": "str",
+    "file_path": "str",
     "max_unread_frames": "int",
     "capture_timeout": "int",
-    "file_path": "str"
+    "frame_sleep": "float",
+    "stream_width": "int",
+    "stream_height": "int"
   },
   "ports": {
     "5000/tcp": 5000
