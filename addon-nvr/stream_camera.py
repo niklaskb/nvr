@@ -24,7 +24,7 @@ class StreamCamera(object):
         self._animation_index = 0
         self._animation = [".", "..", "...", ".."]
         self._animation_speed = 0.5
-        self._animation_last_frame = None
+        self._animation_last = None
 
     def __del__(self):
         self._is_streaming = False
@@ -62,14 +62,15 @@ class StreamCamera(object):
             if self._frame is not None:
                 frame = bytearray(cv2.imencode(".jpeg", self._frame)[1])
                 self._frame = None
+                self._unread_frames = 0
                 return frame
             elif self._is_loading:
                 time.sleep(self._frame_sleep)
                 if (
-                    self._animation_last_frame == None
-                    or time.time() - self._animation_last_frame > self._animation_speed
+                    self._animation_last == None
+                    or time.time() - self._animation_last > self._animation_speed
                 ):
-                    self._animation_last_frame = time.time()
+                    self._animation_last = time.time()
                     self._frame = self._create_loading_image()
             else:
                 time.sleep(self._frame_sleep)
@@ -77,14 +78,15 @@ class StreamCamera(object):
     def start_streaming(self):
         if self._is_streaming:
             return
-        else:
-            self._logger.info("Starting camera stream")
-            self._is_streaming = True
-            self._unread_frames = 0
+
+        self._logger.info("Starting camera stream")
+        self._is_streaming = True
+        self._unread_frames = 0
+        self._is_loading = True
 
         self._stream_video_thread = threading.Thread(target=self._stream)
         self._stream_video_thread.start()
-        self._is_loading = True
+
         self._frame = self._create_loading_image()
 
     def _stream(self):
@@ -107,7 +109,7 @@ class StreamCamera(object):
             if self._is_loading:
                 self._is_loading = False
                 self._animation_index = 0
-                self._animation_last_frame = None
+                self._animation_last = None
 
             self._unread_frames = self._unread_frames + 1
 
