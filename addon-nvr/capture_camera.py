@@ -39,8 +39,8 @@ class CaptureCamera(object):
         if self._capture_video_process:
             return
         filename = datetime.now().strftime("%Y%m%d_%H%M%S")
-        self.capture_video_thread = threading.Thread(target=self._capture_video, args=(filename,), kwargs={})
-        self.capture_video_thread.start()
+        self._capture_video_thread = threading.Thread(target=self._capture_video, args=(filename,), kwargs={})
+        self._capture_video_thread.start()
         self._capture_image(filename)
 
     def capture_end(self):

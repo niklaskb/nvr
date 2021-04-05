@@ -40,8 +40,6 @@ class StreamCamera(object):
 
         return img
 
-    def 
-
     def get_frame(self):
         self.start_streaming()
 
