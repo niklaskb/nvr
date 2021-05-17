@@ -1,6 +1,6 @@
 {
   "name": "NVR",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "slug": "nvr",
   "description": "NVR",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],

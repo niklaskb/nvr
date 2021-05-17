@@ -60,11 +60,11 @@ def get_videos():
         <ul>
 """
     timezone = pytz.timezone("Europe/Stockholm")
-    video_files = list(filter(lambda x: x.endswith(".mp4"), listdir(file_path)))
+    video_files = list(filter(lambda x: x.endswith(".mp4") and not x.endswith(".tmp.mp4"), listdir(file_path)))
     video_files.sort(reverse=True)
     for video_file in video_files:
         local_time = timezone.localize(
-            datetime.strptime(video_file[:-5], "%Y%m%d_%H%M%S")
+            datetime.strptime(video_file[0:15], "%Y%m%d_%H%M%S")
         ).strftime("%Y-%m-%d %H:%M:%S")
         html += (
             f'<li><a target="_blank" href="./videos/{video_file}">{local_time}</a></li>'
