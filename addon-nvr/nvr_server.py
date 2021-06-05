@@ -60,7 +60,7 @@ def get_videos():
         <ul>
 """
     timezone = pytz.timezone("Europe/Stockholm")
-    video_files = list(filter(lambda x: x.endswith(".mp4") and not x.endswith(".tmp.mp4"), listdir(file_path)))
+    video_files = list(filter(lambda x: x.endswith(".mp4") and not x.endswith(".tmp.mp4"), listdir(video_file_path)))
     video_files.sort(reverse=True)
     for video_file in video_files:
         local_time = timezone.localize(
@@ -80,14 +80,23 @@ def get_videos():
 
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
-    return send_from_directory(file_path, file, cache_timeout=0)
+    return send_from_directory(video_file_path, file, cache_timeout=0)
 
 
-def latest_file(type):
-    files = list(filter(lambda x: x.endswith(type), listdir(file_path)))
+def latest_video():
+    files = list(filter(lambda x: x.endswith(".mp4"), listdir(video_file_path)))
     files.sort(reverse=True)
     if len(files) > 0:
-        return send_from_directory(file_path, files[0], cache_timeout=0)
+        return send_from_directory(video_file_path, files[0], cache_timeout=0)
+    else:
+        return "Not found", 404
+
+
+def latest_image(type):
+    files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
+    files.sort(reverse=True)
+    if len(files) > 0:
+        return send_from_directory(image_file_path, files[0], cache_timeout=0)
     else:
         return "Not found", 404
 
@@ -96,7 +105,7 @@ def latest_file(type):
 def get_videos_latest():
     file = capture_camera.get_latest_video()
     if file:
-        return send_from_directory(file_path, file, cache_timeout=0)
+        return send_from_directory(video_file_path, file, cache_timeout=0)
     else:
         return "Not found", 404
 
@@ -105,7 +114,7 @@ def get_videos_latest():
 def get_images_latest():
     file = capture_camera.get_latest_image()
     if file:
-        return send_from_directory(file_path, file, cache_timeout=0)
+        return send_from_directory(image_file_path, file, cache_timeout=0)
     else:
         return "Not found", 404
 
