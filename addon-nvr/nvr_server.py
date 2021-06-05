@@ -94,7 +94,7 @@ def latest_file(type):
 
 @app.route("/videos/latest")
 def get_videos_latest():
-    file = capture_camera.get_latest_file(".mp4")
+    file = capture_camera.get_latest_video()
     if file:
         return send_from_directory(file_path, file, cache_timeout=0)
     else:
@@ -103,7 +103,7 @@ def get_videos_latest():
 
 @app.route("/images/latest")
 def get_images_latest():
-    file = capture_camera.get_latest_file(".jpeg")
+    file = capture_camera.get_latest_image()
     if file:
         return send_from_directory(file_path, file, cache_timeout=0)
     else:
@@ -142,12 +142,14 @@ def get_video_stream_mjpeg():
 if __name__ == "__main__":
     camera_url_capture = sys.argv[1]
     camera_url_stream = sys.argv[2]
-    file_path = sys.argv[3]
-    max_unread_frames = int(sys.argv[4])
-    capture_timeout = int(sys.argv[5])
-    frame_sleep = float(sys.argv[6])
-    stream_width = int(sys.argv[7])
-    stream_height = int(sys.argv[8])
+    video_file_path = sys.argv[3]
+    image_file_path = sys.argv[4]
+    max_unread_frames = int(sys.argv[5])
+    capture_timeout = int(sys.argv[6])
+    frame_sleep = float(sys.argv[7])
+    stream_width = int(sys.argv[8])
+    stream_height = int(sys.argv[9])
+    purge_days = int(sys.argv[10])
     stream_camera = StreamCamera(
         app.logger,
         camera_url_stream,
@@ -157,6 +159,6 @@ if __name__ == "__main__":
         stream_height,
     )
     capture_camera = CaptureCamera(
-        app.logger, camera_url_capture, file_path, capture_timeout
+        app.logger, camera_url_capture, video_file_path, image_file_path, capture_timeout, purge_days,
     )
     app.run(host="0.0.0.0")

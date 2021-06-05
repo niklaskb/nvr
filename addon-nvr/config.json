@@ -1,6 +1,6 @@
 {
   "name": "NVR",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "slug": "nvr",
   "description": "NVR",
   "arch": ["armhf", "armv7", "aarch64", "amd64", "i386"],
@@ -11,10 +11,12 @@
     "camera_url_stream": "rtsp://username:password@192.168.1.111:554/Streaming/Channels/102/",
     "max_unread_frames": 300,
     "capture_timeout": 1800,
-    "file_path": "/media/videos/",
+    "video_file_path": "/media/camera/videos/",
+    "image_file_path": "/media/camera/images/",
     "frame_sleep": 0.02,
     "stream_width": 640,
-    "stream_height": 360
+    "stream_height": 360,
+    "purge_days": 7
   },
   "schema": {
     "camera_url_capture": "str",
@@ -24,7 +26,8 @@
     "capture_timeout": "int",
     "frame_sleep": "float",
     "stream_width": "int",
-    "stream_height": "int"
+    "stream_height": "int",
+    "purge_days": "int"
   },
   "ports": {
     "5000/tcp": 5000
