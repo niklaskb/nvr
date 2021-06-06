@@ -27,7 +27,7 @@ def require_internal(func):
     return wrapper_require_internal
 
 
-@app.route("/videos")
+@app.route("/recordings")
 def get_videos():
     html = """
 <!DOCTYPE html>
@@ -60,16 +60,21 @@ def get_videos():
         <ul>
 """
     timezone = pytz.timezone("Europe/Stockholm")
+    image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
     video_files = list(filter(lambda x: x.endswith(".mp4") and not x.endswith(".tmp.mp4"), listdir(video_file_path)))
-    video_files.sort(reverse=True)
-    for video_file in video_files:
-        local_time = timezone.localize(
-            datetime.strptime(video_file[0:15], "%Y%m%d_%H%M%S")
-        ).strftime("%Y-%m-%d %H:%M:%S")
-        html += (
-            f'<li><a target="_blank" href="./videos/{video_file}">{local_time}</a></li>'
-        )
-
+    image_files.sort(reverse=True)
+    for image_file in image_files:
+        prefix = image_file[0:15]
+        local_time = timezone.localize(datetime.strptime(prefix, "%Y%m%d_%H%M%S")).strftime("%Y-%m-%d %H:%M:%S")
+        matching_video_files = list(filter(lambda x: x.startswith(prefix), video_files))
+        if matching_video_files:
+            html += (
+                f'<li><a target="_blank" href="./videos/{matching_video_files[0]}">{local_time}</a></li>'
+            )
+        else:
+            html += (
+                f'<li><a target="_blank" href="./images/{image_file}">{local_time}</a></li>'
+            )
     html += """
         </ul>
     </body>
@@ -81,6 +86,11 @@ def get_videos():
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
     return send_from_directory(video_file_path, file, cache_timeout=0)
+
+
+@app.route("/images/<path:file>")
+def get_images_file(file):
+    return send_from_directory(image_file_path, file, cache_timeout=0)
 
 
 def latest_video():
