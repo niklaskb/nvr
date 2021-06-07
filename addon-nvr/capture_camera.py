@@ -55,7 +55,8 @@ class CaptureCamera(object):
             time = datetime.strptime(file[0:15], "%Y%m%d_%H%M%S")
             days = (datetime.now() - time).days
             if days > self._purge_days:
-                os.remove(file)
+                self._logger.info(f"Removing file {file}")
+                os.remove(f"{self._video_file_path}/{file}")
 
     def _capture_image(self, filename):
         start = time.time()
