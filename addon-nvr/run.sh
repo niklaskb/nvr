@@ -1,15 +1,15 @@
-#!/usr/bin/with-contenv bashio
+#!/bin/bash
 
-CAMERA_URL_CAPTURE="$(bashio::config 'camera_url_capture')"
-CAMERA_URL_STREAM="$(bashio::config 'camera_url_stream')"
-VIDEO_FILE_PATH="$(bashio::config 'video_file_path')"
-IMAGE_FILE_PATH="$(bashio::config 'image_file_path')"
-MAX_UNREAD_FRAMES="$(bashio::config 'max_unread_frames')"
-CAPTURE_TIMEOUT="$(bashio::config 'capture_timeout')"
-FRAME_SLEEP="$(bashio::config 'frame_sleep')"
-STREAM_WIDTH="$(bashio::config 'stream_width')"
-STREAM_HEIGHT="$(bashio::config 'stream_height')"
-PURGE_DAYS="$(bashio::config 'purge_days')"
+# CAMERA_URL_CAPTURE="$1"
+# CAMERA_URL_STREAM="$2"
+VIDEO_FILE_PATH="/camera/videos/"
+IMAGE_FILE_PATH="/camera/images/"
+MAX_UNREAD_FRAMES="300"
+CAPTURE_TIMEOUT="1800"
+FRAME_SLEEP="0.02"
+STREAM_WIDTH="640"
+STREAM_HEIGHT="360"
+PURGE_DAYS="7"
 
 mkdir -p $VIDEO_FILE_PATH
 mkdir -p $IMAGE_FILE_PATH

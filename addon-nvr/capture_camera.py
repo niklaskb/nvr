@@ -18,7 +18,7 @@ class CaptureCamera(object):
 
     def _capture_video(self, filename):
         start = time.time()
-        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url_full} -use_wallclock_as_timestamps 1 -metadata title="" -f mp4 -t {self._capture_timeout} -c copy -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov {self._video_file_path}{filename}.tmp.mp4'
+        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url_full} -use_wallclock_as_timestamps 1 -metadata title="" -f mp4 -t {self._capture_timeout} -c copy -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov {self._video_file_path}{filename}.mp4'
         self._logger.info(f"Launching capture video process: {command}")
         self._capture_video_process = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE, bufsize=-1
@@ -30,23 +30,23 @@ class CaptureCamera(object):
         elapsed = time.time() - start
         self._logger.info(f"Capture video process done in {elapsed:.1f}s")
 
-    def _rewrite_video(self, filename):
-        start = time.time()
-        command = f'ffmpeg -loglevel panic -nostats -y -i {self._video_file_path}{filename}.tmp.mp4 -metadata title="" -f mp4 -c copy {self._video_file_path}{filename}.mp4'
-        self._logger.info(f"Launching rewrite video process: {command}")
-        rewrite_video_process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, bufsize=-1
-        )
-        output = io.TextIOWrapper(rewrite_video_process.stdout)
-        rewrite_video_process.wait()
-        output
-        os.remove(f"{self._video_file_path}{filename}.tmp.mp4")
-        elapsed = time.time() - start
-        self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
+    # def _rewrite_video(self, filename):
+    #     start = time.time()
+    #     command = f'ffmpeg -loglevel panic -nostats -y -i {self._video_file_path}{filename}.tmp.mp4 -metadata title="" -f mp4 -c copy {self._video_file_path}{filename}.mp4'
+    #     self._logger.info(f"Launching rewrite video process: {command}")
+    #     rewrite_video_process = subprocess.Popen(
+    #         command, shell=True, stdout=subprocess.PIPE, bufsize=-1
+    #     )
+    #     output = io.TextIOWrapper(rewrite_video_process.stdout)
+    #     rewrite_video_process.wait()
+    #     output
+    #     os.remove(f"{self._video_file_path}{filename}.tmp.mp4")
+    #     elapsed = time.time() - start
+    #     self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
 
     def _capture_video_thread(self, filename):
         self._capture_video(filename)
-        self._rewrite_video(filename)
+        # self._rewrite_video(filename)
         self._remove_old_videos()
 
     def _remove_old_videos(self):

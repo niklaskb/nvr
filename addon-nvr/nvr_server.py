@@ -4,7 +4,6 @@ from flask import request, send_from_directory
 from flask import Response
 import logging
 from datetime import datetime
-import time
 import pytz
 from os import listdir
 import ipaddress
