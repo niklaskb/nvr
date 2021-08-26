@@ -64,7 +64,8 @@ def get_videos():
     image_files.sort(reverse=True)
     for image_file in image_files:
         prefix = image_file[0:15]
-        local_time = timezone.localize(datetime.strptime(prefix, "%Y%m%d_%H%M%S")).strftime("%Y-%m-%d %H:%M:%S")
+        time = datetime.strptime(prefix, "%Y%m%d_%H%M%S")
+        local_time = time.replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
         matching_video_files = list(filter(lambda x: x.startswith(prefix), video_files))
         if matching_video_files:
             html += (
