@@ -6,7 +6,14 @@ import numpy
 
 class StreamCamera(object):
     def __init__(
-        self, logger, camera_url, max_unread_frames, frame_sleep, width, height
+        self,
+        logger,
+        camera_name,
+        camera_url,
+        max_unread_frames,
+        frame_sleep,
+        width,
+        height,
     ):
         self._logger = logger
         self._unread_frames = 0
@@ -17,6 +24,7 @@ class StreamCamera(object):
         self._width = width
         self._height = height
 
+        self._camera_name = camera_name
         self._camera_url = camera_url
         self._max_unread_frames = max_unread_frames
         self._frame_sleep = frame_sleep
@@ -79,7 +87,7 @@ class StreamCamera(object):
         if self._is_streaming:
             return
 
-        self._logger.info("Starting camera stream")
+        self._logger.info(f"Starting camera stream for {self._camera_name}")
         self._is_streaming = True
         self._unread_frames = 0
         self._is_loading = True
@@ -91,19 +99,23 @@ class StreamCamera(object):
 
     def _stream(self):
         time.sleep(self._frame_sleep)  # Yield to other thread
-        self._logger.info("Streaming starting")
+        self._logger.info(f"Streaming starting for {self._camera_name}")
         self.video_capture = cv2.VideoCapture(self._camera_url)
         while True:
             if not self._is_streaming:
-                self._logger.info("Stopping camera stream (shutdown)")
+                self._logger.info(
+                    f"Stopping camera stream for {self._camera_name} (shutdown)"
+                )
                 break
             if self._unread_frames > self._max_unread_frames:
-                self._logger.info("Stopping camera stream (no consumer)")
+                self._logger.info(
+                    f"Stopping camera stream for {self._camera_name} (no consumer)"
+                )
                 break
 
             success, self._frame = self.video_capture.read()
             if not success:
-                self._logger.info("Failed to read frame")
+                self._logger.info(f"Failed to read frame for {self._camera_name}")
                 break
 
             if self._is_loading:
@@ -117,4 +129,4 @@ class StreamCamera(object):
         self._is_streaming = False
         self._frame = None
         self._unread_frames = 0
-        self._logger.info("Camera stream stopped")
+        self._logger.info(f"Camera stream stopped for {self._camera_name}")

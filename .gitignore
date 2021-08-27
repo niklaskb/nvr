@@ -131,6 +131,5 @@ dmypy.json
 .code-workspace
 .vscode/
 .DS_Store
-addon-nvr/videos/
-addon-nvr/camera/
+addon-nvr/mnt/
 

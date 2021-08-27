@@ -3,6 +3,7 @@ import threading
 import time
 from os import listdir
 import subprocess, io
+import signal
 import os
 
 
@@ -29,16 +30,24 @@ class CaptureCamera(object):
     def _capture_video(self, filename):
         start = time.time()
         command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._video_file_path}{filename}.mp4'
-        self._logger.info(f"Launching capture video process: {command}")
+        self._logger.info(
+            f"Launching capture video process for {self._camera_name}: {command}"
+        )
         self._capture_video_process = subprocess.Popen(
-            command, shell=True, stdout=subprocess.PIPE, bufsize=-1
+            command,
+            shell=True,
+            stdout=subprocess.PIPE,
+            bufsize=-1,
+            preexec_fn=os.setsid,
         )
         output = io.TextIOWrapper(self._capture_video_process.stdout)
         self._capture_video_process.wait()
         output
         self._capture_video_process = None
         elapsed = time.time() - start
-        self._logger.info(f"Capture video process done in {elapsed:.1f}s")
+        self._logger.info(
+            f"Capture video process for {self._camera_name} done in {elapsed:.1f}s"
+        )
 
     # def _rewrite_video(self, filename):
     #     start = time.time()
@@ -60,7 +69,9 @@ class CaptureCamera(object):
     def _capture_image(self, filename):
         start = time.time()
         command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._image_file_path}{filename}.jpeg"
-        self._logger.info(f"Launching capture image process: {command}")
+        self._logger.info(
+            f"Launching capture image process for {self._camera_name}: {command}"
+        )
         process = subprocess.Popen(
             command, shell=True, stdout=subprocess.PIPE, bufsize=-1
         )
@@ -68,7 +79,9 @@ class CaptureCamera(object):
         process.wait()
         output
         elapsed = time.time() - start
-        self._logger.info(f"Capture image process done in {elapsed:.1f}s")
+        self._logger.info(
+            f"Capture image process done for {self._camera_name} in {elapsed:.1f}s"
+        )
 
     def capture_start(self, timestamp):
         if self._capture_video_process:
@@ -82,4 +95,5 @@ class CaptureCamera(object):
 
     def capture_end(self):
         if self._capture_video_process:
-            self._capture_video_process.terminate()
+            self._logger.info(f"Terminating video process for {self._camera_name}")
+            os.killpg(os.getpgid(self._capture_video_process.pid), signal.SIGTERM)

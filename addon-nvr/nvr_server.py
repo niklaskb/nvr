@@ -236,6 +236,7 @@ if __name__ == "__main__":
         camera_display_names[camera_config["name"]] = camera_config["display_name"]
         stream_cameras[camera_config["name"]] = StreamCamera(
             app.logger,
+            camera_config["name"],
             camera_config["stream"]["url"],
             camera_config["stream"]["max_unread_frames"],
             camera_config["stream"]["frame_sleep"],

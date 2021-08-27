@@ -22,6 +22,7 @@ COPY __init__.py \
     /
 
 RUN mkdir -p /media/videos
+RUN mkdir -p /media/images
 
 RUN chmod a+x /run.sh
 
