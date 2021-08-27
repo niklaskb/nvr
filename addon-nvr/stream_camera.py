@@ -6,7 +6,7 @@ import numpy
 
 class StreamCamera(object):
     def __init__(
-        self, logger, camera_url_low, max_unread_frames, frame_sleep, width, height
+        self, logger, camera_url, max_unread_frames, frame_sleep, width, height
     ):
         self._logger = logger
         self._unread_frames = 0
@@ -17,7 +17,7 @@ class StreamCamera(object):
         self._width = width
         self._height = height
 
-        self._camera_url_low = camera_url_low
+        self._camera_url = camera_url
         self._max_unread_frames = max_unread_frames
         self._frame_sleep = frame_sleep
 
@@ -92,7 +92,7 @@ class StreamCamera(object):
     def _stream(self):
         time.sleep(self._frame_sleep)  # Yield to other thread
         self._logger.info("Streaming starting")
-        self.video_capture = cv2.VideoCapture(self._camera_url_low)
+        self.video_capture = cv2.VideoCapture(self._camera_url)
         while True:
             if not self._is_streaming:
                 self._logger.info("Stopping camera stream (shutdown)")

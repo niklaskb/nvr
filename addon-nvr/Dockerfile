@@ -14,6 +14,8 @@ RUN pip3 install \
 # Copy data for nvr
 COPY __init__.py \
     capture_camera.py \
+    config.json \
+    file_manager.py \
     nvr_server.py \
     run.sh \
     stream_camera.py \
