@@ -63,9 +63,6 @@ class CaptureCamera(object):
     #     elapsed = time.time() - start
     #     self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
 
-    def _capture_video_thread(self, filename):
-        self._capture_video(filename)
-
     def _capture_image(self, filename):
         start = time.time()
         command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._image_file_path}{filename}.jpeg"
@@ -87,11 +84,16 @@ class CaptureCamera(object):
         if self._capture_video_process:
             return
         filename = f"{timestamp}_{self._camera_name}"
-        thread = threading.Thread(
-            target=self._capture_video_thread, args=(filename,), kwargs={}
+
+        video_thread = threading.Thread(
+            target=self._capture_video, args=(filename,), kwargs={}
         )
-        thread.start()
-        self._capture_image(filename)
+        image_thread = threading.Thread(
+            target=self._capture_image, args=(filename,), kwargs={}
+        )
+
+        video_thread.start()
+        image_thread.start()
 
     def capture_end(self):
         if self._capture_video_process:

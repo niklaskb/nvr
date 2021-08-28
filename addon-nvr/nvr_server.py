@@ -29,7 +29,7 @@ def require_internal(func):
 
 
 @app.route("/recordings")
-def get_videos():
+def get_recordings():
     html = """
 <!DOCTYPE html>
 <html>
@@ -148,7 +148,7 @@ def latest_image(camera_name):
 
 
 @app.route("/cameras/<path:camera_name>/videos/latest")
-def get_videos_latest(camera_name):
+def get_cameras_camera_videos_latest(camera_name):
     file = file_manager.get_latest_video(camera_name)
     if file:
         return send_from_directory(video_file_path, file, cache_timeout=0)
@@ -157,7 +157,7 @@ def get_videos_latest(camera_name):
 
 
 @app.route("/cameras/<path:camera_name>/images/latest")
-def get_images_latest(camera_name):
+def get_cameras_camera_images_latest(camera_name):
     file = file_manager.get_latest_image(camera_name)
     if file:
         return send_from_directory(image_file_path, file, cache_timeout=0)
@@ -167,10 +167,16 @@ def get_images_latest(camera_name):
 
 @app.route("/cameras/capture/start")
 @require_internal
-def get_capture_start_all():
+def get_cameras_capture_start():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     for _, capture_camera in capture_cameras.items():
         capture_camera.capture_start(timestamp)
+    return "OK"
+
+
+@app.route("/cameras/streaming/start")
+@require_internal
+def get_cameras_streaming_start():
     for _, stream_camera in stream_cameras.items():
         stream_camera.start_streaming()
     return "OK"
@@ -178,7 +184,7 @@ def get_capture_start_all():
 
 @app.route("/cameras/capture/end")
 @require_internal
-def get_capture_end_all():
+def get_cameras_capture_end():
     for _, capture_camera in capture_cameras.items():
         capture_camera.capture_end()
     return "OK"
@@ -186,18 +192,26 @@ def get_capture_end_all():
 
 @app.route("/cameras/<path:camera_name>/capture/start")
 @require_internal
-def get_capture_start(camera_name):
+def get_cameras_camera_capture_start(camera_name):
     if camera_name not in capture_cameras:
         abort(404)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     capture_cameras[camera_name].capture_start(timestamp)
+    return "OK"
+
+
+@app.route("/cameras/<path:camera_name>/streaming/start")
+@require_internal
+def get_cameras_camera_streaming_start(camera_name):
+    if camera_name not in capture_cameras:
+        abort(404)
     stream_cameras[camera_name].start_streaming()
     return "OK"
 
 
 @app.route("/cameras/<path:camera_name>/capture/end")
 @require_internal
-def get_capture_end(camera_name):
+def get_cameras_camera_capture_end(camera_name):
     if camera_name not in capture_cameras:
         abort(404)
     capture_cameras[camera_name].capture_end()
@@ -212,7 +226,7 @@ def http_stream(stream_camera):
 
 @app.route("/cameras/<path:camera_name>/stream/mjpeg")
 @require_internal
-def get_video_stream_mjpeg(camera_name):
+def get_cameras_camera_stream_mjpeg(camera_name):
     if camera_name not in stream_cameras:
         abort(404)
     return Response(
