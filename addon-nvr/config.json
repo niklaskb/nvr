@@ -16,14 +16,29 @@
       }
     },
     {
-      "name": "garden",
-      "display_name": "Trädgård",
+      "name": "front",
+      "display_name": "Framsida",
       "capture": {
-        "url": "rtsp://admin:password@192.168.1.126:554/h264Preview_01_main",
+        "url": "rtsp://admin:password@192.168.1.22:554/h264Preview_01_main",
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
-        "url": "rtsp://admin:password@192.168.1.126:554/h264Preview_01_sub",
+        "url": "rtsp://admin:password@192.168.1.22:554/h264Preview_01_sub",
+        "frame_sleep": 0.02,
+        "stream_width": 640,
+        "stream_height": 480,
+        "max_unread_frames": 300
+      }
+    },
+    {
+      "name": "garden",
+      "display_name": "Trädgård",
+      "capture": {
+        "url": "rtsp://admin:password@192.168.1.23:554/h264Preview_01_main",
+        "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
+      },
+      "stream": {
+        "url": "rtsp://admin:password@192.168.1.23:554/h264Preview_01_sub",
         "frame_sleep": 0.02,
         "stream_width": 640,
         "stream_height": 480,

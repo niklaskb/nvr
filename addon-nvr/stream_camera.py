@@ -19,6 +19,7 @@ class StreamCamera(object):
         self._unread_frames = 0
         self._is_streaming = False
         self._is_loading = False
+        self._is_failing = False
         self._frame = None
         self._stream_video_thread = None
         self._width = width
@@ -63,6 +64,26 @@ class StreamCamera(object):
             self._animation_index = 0
         return img
 
+    def _create_fail_image(self):
+        img = numpy.zeros((self._height, self._width, 3), numpy.uint8)
+        font = cv2.FONT_HERSHEY_SIMPLEX
+        bottom_left_corner_of_text = (int(self._width / 2) - 80, int(self._height / 2))
+        font_scale = 1
+        font_color = (255, 255, 255)
+        line_type = 2
+
+        cv2.putText(
+            img,
+            f"Kamerafel",
+            bottom_left_corner_of_text,
+            font,
+            font_scale,
+            font_color,
+            line_type,
+        )
+
+        return img
+
     def get_frame(self):
         self.start_streaming()
 
@@ -79,7 +100,10 @@ class StreamCamera(object):
                     or time.time() - self._animation_last > self._animation_speed
                 ):
                     self._animation_last = time.time()
-                    self._frame = self._create_loading_image()
+                    if self._is_failing:
+                        self._frame = self._create_fail_image()
+                    else:
+                        self._frame = self._create_loading_image()
             else:
                 time.sleep(self._frame_sleep)
 
@@ -116,10 +140,14 @@ class StreamCamera(object):
             success, self._frame = self.video_capture.read()
             if not success:
                 self._logger.info(f"Failed to read frame for {self._camera_name}")
+                self._frame = self._create_fail_image()
+                self._is_failing = True
+                time.sleep(10)
                 break
 
             if self._is_loading:
                 self._is_loading = False
+                self._is_failing = False
                 self._animation_index = 0
                 self._animation_last = None
 
