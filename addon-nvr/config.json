@@ -9,7 +9,7 @@
       },
       "stream": {
         "url": "rtsp://admin:password@192.168.1.21:554/Streaming/Channels/102/",
-        "frame_sleep": 0.02,
+        "frame_sleep": 0.05,
         "stream_width": 640,
         "stream_height": 360,
         "max_unread_frames": 300
@@ -24,7 +24,7 @@
       },
       "stream": {
         "url": "rtsp://admin:password@192.168.1.22:554/h264Preview_01_sub",
-        "frame_sleep": 0.02,
+        "frame_sleep": 0.05,
         "stream_width": 640,
         "stream_height": 480,
         "max_unread_frames": 300
@@ -39,7 +39,7 @@
       },
       "stream": {
         "url": "rtsp://admin:password@192.168.1.23:554/h264Preview_01_sub",
-        "frame_sleep": 0.02,
+        "frame_sleep": 0.05,
         "stream_width": 640,
         "stream_height": 480,
         "max_unread_frames": 300
