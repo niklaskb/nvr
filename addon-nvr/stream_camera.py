@@ -84,12 +84,16 @@ class StreamCamera(object):
 
         return img
 
+    def get_jpeg(self):
+        frame = self.get_frame()
+        return bytearray(cv2.imencode(".jpeg", frame)[1])
+
     def get_frame(self):
         self.start_streaming()
 
         while True:
             if self._frame is not None:
-                frame = bytearray(cv2.imencode(".jpeg", self._frame)[1])
+                frame = self._frame
                 self._frame = None
                 self._unread_frames = 0
                 return frame

@@ -9,6 +9,7 @@ import json
 from os import listdir, path
 import ipaddress
 from stream_camera import StreamCamera
+from combined_stream_camera import CombinedStreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
 
@@ -165,28 +166,11 @@ def get_cameras_camera_images_latest(camera_name):
         return "Not found", 404
 
 
-@app.route("/cameras/capture/start")
-@require_internal
-def get_cameras_capture_start():
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    for _, capture_camera in capture_cameras.items():
-        capture_camera.capture_start(timestamp)
-    return "OK"
-
-
 @app.route("/cameras/streaming/start")
 @require_internal
 def get_cameras_streaming_start():
     for _, stream_camera in stream_cameras.items():
         stream_camera.start_streaming()
-    return "OK"
-
-
-@app.route("/cameras/capture/end")
-@require_internal
-def get_cameras_capture_end():
-    for _, capture_camera in capture_cameras.items():
-        capture_camera.capture_end()
     return "OK"
 
 
@@ -197,15 +181,6 @@ def get_cameras_camera_capture_start(camera_name):
         abort(404)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     capture_cameras[camera_name].capture_start(timestamp)
-    return "OK"
-
-
-@app.route("/cameras/<path:camera_name>/streaming/start")
-@require_internal
-def get_cameras_camera_streaming_start(camera_name):
-    if camera_name not in capture_cameras:
-        abort(404)
-    stream_cameras[camera_name].start_streaming()
     return "OK"
 
 
@@ -220,7 +195,7 @@ def get_cameras_camera_capture_end(camera_name):
 
 def http_stream(stream_camera):
     while True:
-        frame = stream_camera.get_frame()
+        frame = stream_camera.get_jpeg()
         yield (b"--frame\r\nContent-Type: image/jpeg\r\n\r\n" + frame + b"\r\n")
 
 
@@ -231,6 +206,17 @@ def get_cameras_camera_stream_mjpeg(camera_name):
         abort(404)
     return Response(
         http_stream(stream_cameras[camera_name]),
+        mimetype="multipart/x-mixed-replace; boundary=frame",
+    )
+
+
+@app.route("/cameras/stream/mjpeg")
+@require_internal
+def get_cameras_stream_mjpeg():
+    if combined_stream_camera is None:
+        abort(404)
+    return Response(
+        http_stream(combined_stream_camera),
         mimetype="multipart/x-mixed-replace; boundary=frame",
     )
 
@@ -246,6 +232,7 @@ if __name__ == "__main__":
     capture_cameras = {}
     camera_display_names = {}
 
+    combined_config = {}
     for camera_config in config["cameras"]:
         camera_display_names[camera_config["name"]] = camera_config["display_name"]
         stream_cameras[camera_config["name"]] = StreamCamera(
@@ -254,8 +241,8 @@ if __name__ == "__main__":
             camera_config["stream"]["url"],
             camera_config["stream"]["max_unread_frames"],
             camera_config["stream"]["frame_sleep"],
-            camera_config["stream"]["stream_width"],
-            camera_config["stream"]["stream_height"],
+            camera_config["stream"]["width"],
+            camera_config["stream"]["height"],
         )
 
         capture_cameras[camera_config["name"]] = CaptureCamera(
@@ -268,11 +255,27 @@ if __name__ == "__main__":
             config["capture_timeout"],
         )
 
+        if "combined_stream" in camera_config:
+            combined_config[camera_config["name"]] = {}
+            combined_config[camera_config["name"]]["offset_width"] = camera_config["combined_stream"]["offset_width"]
+            combined_config[camera_config["name"]]["offset_height"] = camera_config["combined_stream"]["offset_height"]
+            combined_config[camera_config["name"]]["width"] = camera_config["combined_stream"]["width"]
+            combined_config[camera_config["name"]]["height"] = camera_config["combined_stream"]["height"]
+
     file_manager = FileManager(
         app.logger,
         config["video_file_path"],
         config["image_file_path"],
         config["purge_days"],
     )
+
+    if "combined_stream" in config:
+        combined_stream_camera = CombinedStreamCamera(
+            app.logger,
+            stream_cameras,
+            config["combined_stream"]["width"],
+            config["combined_stream"]["height"],
+            combined_config,
+        )
 
     app.run(host="0.0.0.0")
