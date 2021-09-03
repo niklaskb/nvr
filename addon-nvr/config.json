@@ -15,10 +15,10 @@
         "max_unread_frames": 300
       },
       "combined_stream": {
-        "offset_width": 329,
+        "offset_width": 0,
         "offset_height": 0,
-        "width": 640,
-        "height": 360
+        "width": 1280,
+        "height": 720
       }
     },
     {
@@ -37,7 +37,7 @@
       },
       "combined_stream": {
         "offset_width": 0,
-        "offset_height": 360,
+        "offset_height": 720,
         "width": 640,
         "height": 480
       }
@@ -58,7 +58,7 @@
       },
       "combined_stream": {
         "offset_width": 640,
-        "offset_height": 360,
+        "offset_height": 720,
         "width": 640,
         "height": 480
       }
@@ -70,6 +70,6 @@
   "purge_days": 7,
   "combined_stream": {
     "width": 1280,
-    "height": 840
+    "height": 1200
   }
 }
