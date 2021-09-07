@@ -257,10 +257,18 @@ if __name__ == "__main__":
 
         if "combined_stream" in camera_config:
             combined_config[camera_config["name"]] = {}
-            combined_config[camera_config["name"]]["offset_width"] = camera_config["combined_stream"]["offset_width"]
-            combined_config[camera_config["name"]]["offset_height"] = camera_config["combined_stream"]["offset_height"]
-            combined_config[camera_config["name"]]["width"] = camera_config["combined_stream"]["width"]
-            combined_config[camera_config["name"]]["height"] = camera_config["combined_stream"]["height"]
+            combined_config[camera_config["name"]]["offset_width"] = camera_config[
+                "combined_stream"
+            ]["offset_width"]
+            combined_config[camera_config["name"]]["offset_height"] = camera_config[
+                "combined_stream"
+            ]["offset_height"]
+            combined_config[camera_config["name"]]["width"] = camera_config[
+                "combined_stream"
+            ]["width"]
+            combined_config[camera_config["name"]]["height"] = camera_config[
+                "combined_stream"
+            ]["height"]
 
     file_manager = FileManager(
         app.logger,
