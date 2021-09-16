@@ -25,22 +25,20 @@ class FileManager(object):
                 os.remove(f"{self._video_file_path}/{file}")
 
     def get_latest_image(self, camera):
-        files = list(
-            filter(
-                lambda x: x.endswith(f"_{camera}.jpeg"), listdir(self._image_file_path)
-            )
-        )
-        files.sort(reverse=True)
-        if len(files) > 0:
-            return files[0]
-        else:
-            return None
+        return self._get_latest_file(f"_{camera}.jpeg", self._image_file_path)
 
     def get_latest_video(self, camera):
+        return self._get_latest_file(f"_{camera}.mp4", self._video_file_path)
+
+    def get_latest_image(self):
+        return self._get_latest_file(".jpeg", self._image_file_path)
+
+    def get_latest_video(self):
+        return self._get_latest_file(".mp4", self._video_file_path)
+
+    def _get_latest_file(self, endswith, file_path):
         files = list(
-            filter(
-                lambda x: x.endswith(f"_{camera}.mp4"), listdir(self._video_file_path)
-            )
+            filter(lambda x: x.endswith(endswith), listdir(file_path))
         )
         files.sort(reverse=True)
         if len(files) > 0:

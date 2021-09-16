@@ -119,12 +119,12 @@ def get_recordings():
 
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
-    return send_from_directory(video_file_path, file, cache_timeout=0)
+    return send_from_directory(video_file_path, file, max_age=0)
 
 
 @app.route("/images/<path:file>")
 def get_images_file(file):
-    return send_from_directory(image_file_path, file, cache_timeout=0)
+    return send_from_directory(image_file_path, file, max_age=0)
 
 
 def latest_video(camera_name):
@@ -133,7 +133,7 @@ def latest_video(camera_name):
     )
     files.sort(reverse=True)
     if len(files) > 0:
-        return send_from_directory(video_file_path, files[0], cache_timeout=0)
+        return send_from_directory(video_file_path, files[0], max_age=0)
     else:
         return "Not found", 404
 
@@ -144,7 +144,7 @@ def latest_image(camera_name):
     )
     files.sort(reverse=True)
     if len(files) > 0:
-        return send_from_directory(image_file_path, files[0], cache_timeout=0)
+        return send_from_directory(image_file_path, files[0], max_age=0)
     else:
         return "Not found", 404
 
@@ -153,7 +153,7 @@ def latest_image(camera_name):
 def get_cameras_camera_videos_latest(camera_name):
     file = file_manager.get_latest_video(camera_name)
     if file:
-        return send_from_directory(video_file_path, file, cache_timeout=0)
+        return send_from_directory(video_file_path, file, max_age=0)
     else:
         return "Not found", 404
 
@@ -162,17 +162,27 @@ def get_cameras_camera_videos_latest(camera_name):
 def get_cameras_camera_images_latest(camera_name):
     file = file_manager.get_latest_image(camera_name)
     if file:
-        return send_from_directory(image_file_path, file, cache_timeout=0)
+        return send_from_directory(image_file_path, file, max_age=0)
     else:
         return "Not found", 404
 
 
-@app.route("/cameras/streaming/start")
-@require_internal
-def get_cameras_streaming_start():
-    for _, stream_camera in stream_cameras.items():
-        stream_camera.start_streaming()
-    return "OK"
+@app.route("/cameras/videos/latest")
+def get_cameras_videos_latest():
+    file = file_manager.get_latest_video()
+    if file:
+        return send_from_directory(video_file_path, file, max_age=0)
+    else:
+        return "Not found", 404
+
+
+@app.route("/cameras/images/latest")
+def get_cameras_images_latest():
+    file = file_manager.get_latest_image()
+    if file:
+        return send_from_directory(image_file_path, file, max_age=0)
+    else:
+        return "Not found", 404
 
 
 @app.route("/cameras/<path:camera_name>/capture/start")
