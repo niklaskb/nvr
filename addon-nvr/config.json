@@ -12,14 +12,15 @@
         "frame_sleep": 0.05,
         "width": 640,
         "height": 360,
-        "max_unread_frames": 300
+        "max_unread_frames": 3000
       },
       "combined_stream": {
         "offset_width": 0,
         "offset_height": 0,
         "width": 1280,
         "height": 720
-      }
+      },
+      "ftp_upload_path": "/camera/ftp/driveway/"
     },
     {
       "name": "front",
@@ -33,14 +34,15 @@
         "frame_sleep": 0.05,
         "width": 640,
         "height": 480,
-        "max_unread_frames": 300
+        "max_unread_frames": 3000
       },
       "combined_stream": {
         "offset_width": 0,
         "offset_height": 720,
         "width": 640,
         "height": 480
-      }
+      },
+      "ftp_upload_path": "/camera/ftp/front/"
     },
     {
       "name": "garden",
@@ -54,20 +56,25 @@
         "frame_sleep": 0.05,
         "width": 640,
         "height": 480,
-        "max_unread_frames": 300
+        "max_unread_frames": 3000
       },
       "combined_stream": {
         "offset_width": 640,
         "offset_height": 720,
         "width": 640,
         "height": 480
-      }
+      },
+      "ftp_upload_path": "/camera/ftp/garden/"
     }
   ],
   "video_file_path": "/camera/videos/",
   "image_file_path": "/camera/images/",
   "capture_timeout": 1800,
   "purge_days": 7,
+  "ftp_purge_days": 3,
+  "ftp_event_timeout_seconds": 10,
+  "ftp_image_max_age_seconds": 120,
+  "ftp_video_timeout_seconds": 3600,
   "combined_stream": {
     "width": 1280,
     "height": 1200

@@ -17,6 +17,7 @@ COPY __init__.py \
     combined_stream_camera.py \
     config.json \
     file_manager.py \
+    ftp_camera.py \
     nvr_server.py \
     run.sh \
     stream_camera.py \

@@ -12,6 +12,7 @@ from stream_camera import StreamCamera
 from combined_stream_camera import CombinedStreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
+from ftp_camera import FtpCamera
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -221,6 +222,15 @@ def get_cameras_stream_mjpeg():
     )
 
 
+@app.route("/cameras/<path:camera_name>/event")
+@require_internal
+def get_cameras_camera_event(camera_name):
+    if camera_name not in ftp_cameras:
+        abort(404)
+    ftp_cameras[camera_name].event()
+    return "OK"
+
+
 if __name__ == "__main__":
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -228,8 +238,11 @@ if __name__ == "__main__":
     video_file_path = config["video_file_path"]
     image_file_path = config["image_file_path"]
 
+    app.logger.info(image_file_path)
+
     stream_cameras = {}
     capture_cameras = {}
+    ftp_cameras = {}
     camera_display_names = {}
 
     combined_config = {}
@@ -253,6 +266,18 @@ if __name__ == "__main__":
             config["video_file_path"],
             config["image_file_path"],
             config["capture_timeout"],
+        )
+
+        ftp_cameras[camera_config["name"]] = FtpCamera(
+            app.logger,
+            camera_config["name"],
+            camera_config["ftp_upload_path"],
+            config["image_file_path"],
+            config["video_file_path"],
+            config["ftp_purge_days"],
+            config["ftp_event_timeout_seconds"],
+            config["ftp_image_max_age_seconds"],
+            config["ftp_video_timeout_seconds"],
         )
 
         if "combined_stream" in camera_config:
