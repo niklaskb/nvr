@@ -12,7 +12,6 @@ class StreamCamera(object):
         logger,
         camera_name,
         camera_url,
-        max_unread_frames,
         frame_sleep,
         width,
         height,
@@ -20,7 +19,6 @@ class StreamCamera(object):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_url = camera_url
-        self._max_unread_frames = max_unread_frames
         self._frame_sleep = frame_sleep
         self._width = width
         self._height = height
@@ -33,6 +31,11 @@ class StreamCamera(object):
         return bytearray(cv2.imencode(".jpeg", frame)[1])
 
     def get_frame(self):
+        self._start_streaming()
+
+        return self._queue.get()
+
+    def _start_streaming(self):
         if self._streaming_process is None or not self._streaming_process.is_alive():
             self._streaming_process = multiprocessing.Process(
                 target=self._stream,
@@ -40,7 +43,6 @@ class StreamCamera(object):
                     self._logger,
                     self._camera_name,
                     self._camera_url,
-                    self._max_unread_frames,
                     self._frame_sleep,
                     self._width,
                     self._height,
@@ -49,14 +51,11 @@ class StreamCamera(object):
             )
             self._streaming_process.start()
 
-        return self._queue.get()
-
     def _stream(
         self,
         logger,
         camera_name,
         camera_url,
-        max_unread_frames,
         frame_sleep,
         width,
         height,
@@ -66,7 +65,6 @@ class StreamCamera(object):
             logger,
             camera_name,
             camera_url,
-            max_unread_frames,
             frame_sleep,
             width,
             height,
@@ -81,7 +79,6 @@ class _InternalStreamCamera(object):
         logger,
         camera_name,
         camera_url,
-        max_unread_frames,
         frame_sleep,
         width,
         height,
@@ -90,7 +87,6 @@ class _InternalStreamCamera(object):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_url = camera_url
-        self._max_unread_frames = max_unread_frames
         self._frame_sleep = frame_sleep
         self._width = width
         self._height = height
@@ -98,13 +94,6 @@ class _InternalStreamCamera(object):
 
         self._is_streaming = False
         self._is_loading = False
-        self._is_failing = False
-        self._unread_frames = 0
-
-        self._animation_index = 0
-        self._animation = [".", "..", "...", ".."]
-        self._animation_speed = 0.5
-        self._animation_last = None
 
     def _create_loading_image(self):
         img = numpy.zeros((self._height, self._width, 3), numpy.uint8)
@@ -116,7 +105,7 @@ class _InternalStreamCamera(object):
 
         cv2.putText(
             img,
-            f"Startar {self._animation[self._animation_index]}",
+            f"Startar",
             bottom_left_corner_of_text,
             font,
             font_scale,
@@ -124,9 +113,6 @@ class _InternalStreamCamera(object):
             line_type,
         )
 
-        self._animation_index = self._animation_index + 1
-        if self._animation_index == len(self._animation):
-            self._animation_index = 0
         return img
 
     def _create_fail_image(self):
@@ -150,74 +136,58 @@ class _InternalStreamCamera(object):
         return img
 
     def _put_frame(self, frame):
-        if self._queue.empty():
-            self._unread_frames = 0
-        else:
+        if not self._queue.empty():
             try:
                 self._queue.get_nowait()
-                self._unread_frames = self._unread_frames + 1
             except Empty:
-                self._unread_frames = 0
+                pass
         self._queue.put(frame)
 
-    def _loading(self):
+    def _show_static_frame(self):
         time.sleep(self._frame_sleep)  # Yield to other thread
-        while self._is_loading:
+        while self._static_frame is not None:
             time.sleep(self._frame_sleep)
-            if (
-                self._animation_last == None
-                or time.time() - self._animation_last > self._animation_speed
-            ):
-                self._animation_last = time.time()
-                if self._is_failing:
-                    self._put_frame(self._create_fail_image())
-                else:
-                    self._put_frame(self._create_loading_image())
+            self._put_frame(self._static_frame)
 
     def stream(self):
         if self._is_streaming:
             return
         self._is_streaming = True
         self._is_loading = True
-        self._animation_index = 0
-        self._animation_last = None
-        self._unread_frames = 0
 
         self._logger.info(f"Starting camera stream for {self._camera_name}")
 
-        self._load_video_thread = threading.Thread(target=self._loading)
-        self._load_video_thread.start()
+        self._static_frame = self._create_loading_image()
+
+        self._show_static_frame_thread = threading.Thread(
+            target=self._show_static_frame
+        )
+        self._show_static_frame_thread.start()
 
         self._video_capture = cv2.VideoCapture(self._camera_url)
         while True:
-            if self._unread_frames > self._max_unread_frames:
-                self._logger.info(
-                    f"Stopping camera stream for {self._camera_name} (no consumer)"
-                )
-                break
-
             success, frame = self._video_capture.read()
 
             if not success:
                 self._logger.info(f"Failed to read frame for {self._camera_name}")
-                self._is_failing = True
+                self._static_frame = self._create_fail_image()
                 time.sleep(10)
-                self._is_loading = False
-                self._is_failing = False
+                self._static_frame = None
+                self._show_static_frame_thread.join()
                 break
 
             if self._is_loading:
                 self._is_loading = False
-                self._is_failing = False
-                self._load_video_thread.join()
+                self._static_frame = None
+                self._show_static_frame_thread.join()
                 self._logger.info(f"Started camera stream for {self._camera_name}")
 
             self._put_frame(frame)
 
         self._video_capture.release()
         self._frame = None
-        self._unread_frames = 0
         self._is_streaming = False
+        self._is_loading = False
         try:
             self._queue.get_nowait()
         except Empty:

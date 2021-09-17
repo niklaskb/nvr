@@ -213,7 +213,6 @@ if __name__ == "__main__":
             app.logger,
             camera_config["name"],
             camera_config["stream"]["url"],
-            camera_config["stream"]["max_unread_frames"],
             camera_config["stream"]["frame_sleep"],
             camera_config["stream"]["width"],
             camera_config["stream"]["height"],

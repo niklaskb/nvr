@@ -45,12 +45,12 @@ class FtpCamera(object):
 
     def _event_thread(self, event_timestamp):
         earliest_timestamp = self._last_motion_event
-        current_image = self._current_image(event_timestamp, earliest_timestamp)
+        current_image = self._current_image(earliest_timestamp)
         while current_image is None and datetime.now() < event_timestamp + timedelta(
             seconds=self._image_timeout_seconds
         ):
             time.sleep(0.5)
-            current_image = self._current_image(event_timestamp, earliest_timestamp)
+            current_image = self._current_image(earliest_timestamp)
 
         if current_image is not None:
             new_filename = (
@@ -85,6 +85,7 @@ class FtpCamera(object):
         else:
             self._logger.info(f"Did not find any image for event at {event_timestamp}")
 
+        time.sleep(1)
         self._remove_old_uploaded_files()
 
     def _current_image(self, earliest_timestamp):
@@ -135,5 +136,8 @@ class FtpCamera(object):
             file_timestamp = self._get_file_timestamp(file)
             days = (datetime.now() - file_timestamp).days
             if days > self._ftp_purge_days:
-                self._logger.info(f"Removing file {file}")
-                os.remove(file)
+                try:
+                    self._logger.info(f"Removing file {file}")
+                    os.remove(file)
+                except Exception:
+                    pass
