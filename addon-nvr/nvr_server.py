@@ -127,64 +127,6 @@ def get_images_file(file):
     return send_from_directory(image_file_path, file, max_age=0)
 
 
-def latest_video(camera_name):
-    files = list(
-        filter(lambda x: x.endswith(f"_{camera_name}.mp4"), listdir(video_file_path))
-    )
-    files.sort(reverse=True)
-    if len(files) > 0:
-        return send_from_directory(video_file_path, files[0], max_age=0)
-    else:
-        return "Not found", 404
-
-
-def latest_image(camera_name):
-    files = list(
-        filter(lambda x: x.endswith(f"_{camera_name}.jpeg"), listdir(image_file_path))
-    )
-    files.sort(reverse=True)
-    if len(files) > 0:
-        return send_from_directory(image_file_path, files[0], max_age=0)
-    else:
-        return "Not found", 404
-
-
-@app.route("/cameras/<path:camera_name>/videos/latest")
-def get_cameras_camera_videos_latest(camera_name):
-    file = file_manager.get_latest_video(camera_name)
-    if file:
-        return send_from_directory(video_file_path, file, max_age=0)
-    else:
-        return "Not found", 404
-
-
-@app.route("/cameras/<path:camera_name>/images/latest")
-def get_cameras_camera_images_latest(camera_name):
-    file = file_manager.get_latest_image(camera_name)
-    if file:
-        return send_from_directory(image_file_path, file, max_age=0)
-    else:
-        return "Not found", 404
-
-
-@app.route("/cameras/videos/latest")
-def get_cameras_videos_latest():
-    file = file_manager.get_latest_video()
-    if file:
-        return send_from_directory(video_file_path, file, max_age=0)
-    else:
-        return "Not found", 404
-
-
-@app.route("/cameras/images/latest")
-def get_cameras_images_latest():
-    file = file_manager.get_latest_image()
-    if file:
-        return send_from_directory(image_file_path, file, max_age=0)
-    else:
-        return "Not found", 404
-
-
 @app.route("/cameras/<path:camera_name>/capture/start")
 @require_internal
 def get_cameras_camera_capture_start(camera_name):
@@ -232,12 +174,21 @@ def get_cameras_stream_mjpeg():
     )
 
 
-@app.route("/cameras/<path:camera_name>/event")
+@app.route("/cameras/<path:camera_name>/event/motion")
 @require_internal
-def get_cameras_camera_event(camera_name):
+def get_cameras_camera_event_motion(camera_name):
     if camera_name not in ftp_cameras:
         abort(404)
-    ftp_cameras[camera_name].event()
+    ftp_cameras[camera_name].event_motion()
+    return "OK"
+
+
+@app.route("/cameras/<path:camera_name>/event/person")
+@require_internal
+def get_cameras_camera_event_person(camera_name):
+    if camera_name not in ftp_cameras:
+        abort(404)
+    ftp_cameras[camera_name].event_person()
     return "OK"
 
 
@@ -285,8 +236,7 @@ if __name__ == "__main__":
             config["image_file_path"],
             config["video_file_path"],
             config["ftp_purge_days"],
-            config["ftp_event_timeout_seconds"],
-            config["ftp_image_max_age_seconds"],
+            config["ftp_image_timeout_seconds"],
             config["ftp_video_timeout_seconds"],
         )
 

@@ -15,8 +15,7 @@ class FtpCamera(object):
         image_file_path,
         video_file_path,
         ftp_purge_days,
-        event_timeout_seconds,
-        image_max_age_seconds,
+        image_timeout_seconds,
         video_timeout_seconds,
     ):
         self._logger = logger
@@ -25,13 +24,18 @@ class FtpCamera(object):
         self._image_file_path = image_file_path
         self._video_file_path = video_file_path
         self._ftp_purge_days = ftp_purge_days
-        self._event_timeout_seconds = event_timeout_seconds
-        self._image_max_age_seconds = image_max_age_seconds
+        self._image_timeout_seconds = image_timeout_seconds
         self._video_timeout_seconds = video_timeout_seconds
 
-    def event(self):
+        self._last_motion_event = None
+
+    def event_motion(self):
+        self._last_motion_event = datetime.now()
+        self._logger.info(f"Received motion event at {self._last_motion_event}")
+
+    def event_person(self):
         event_timestamp = datetime.now()
-        self._logger.info(f"Received event at {event_timestamp}")
+        self._logger.info(f"Received person event at {event_timestamp}")
 
         event_thread = threading.Thread(
             target=self._event_thread, args=(event_timestamp,), kwargs={}
@@ -40,12 +44,13 @@ class FtpCamera(object):
         event_thread.start()
 
     def _event_thread(self, event_timestamp):
-        current_image = self._current_image(event_timestamp)
+        earliest_timestamp = self._last_motion_event
+        current_image = self._current_image(event_timestamp, earliest_timestamp)
         while current_image is None and datetime.now() < event_timestamp + timedelta(
-            seconds=self._event_timeout_seconds
+            seconds=self._image_timeout_seconds
         ):
             time.sleep(0.5)
-            current_image = self._current_image(event_timestamp)
+            current_image = self._current_image(event_timestamp, earliest_timestamp)
 
         if current_image is not None:
             new_filename = (
@@ -80,11 +85,9 @@ class FtpCamera(object):
         else:
             self._logger.info(f"Did not find any image for event at {event_timestamp}")
 
-    def _current_image(self, event_timestamp):
-        earliest_timestamp = event_timestamp - timedelta(
-            seconds=self._image_max_age_seconds
-        )
+        self._remove_old_uploaded_files()
 
+    def _current_image(self, earliest_timestamp):
         all_files = glob.iglob(self._ftp_upload_path + "**/**", recursive=True)
         image_files = list(filter(lambda x: x.endswith(".jpg"), all_files))
         if len(image_files) > 0:
@@ -93,7 +96,7 @@ class FtpCamera(object):
 
             image_timestamp = self._get_file_timestamp(image_file)
 
-            if image_timestamp > earliest_timestamp:
+            if image_timestamp >= earliest_timestamp:
                 return image_files[0]
 
         return None
@@ -123,7 +126,7 @@ class FtpCamera(object):
 
         return None
 
-    def _remove_old_files(self, event_timestamp):
+    def _remove_old_uploaded_files(self):
         all_files = glob.iglob(self._ftp_upload_path + "**/**", recursive=True)
         image_and_video_files = list(
             filter(lambda x: x.endswith(".jpg") or x.endswith(".mp4"), all_files)

@@ -11,7 +11,13 @@ RUN pip3 install \
     flask \
     pytz
 
-# Copy data for nvr
+RUN mkdir -p /media/videos
+RUN mkdir -p /media/images
+
+EXPOSE 5000
+
+CMD /run.sh
+
 COPY __init__.py \
     capture_camera.py \
     combined_stream_camera.py \
@@ -23,11 +29,4 @@ COPY __init__.py \
     stream_camera.py \
     /
 
-RUN mkdir -p /media/videos
-RUN mkdir -p /media/images
-
 RUN chmod a+x /run.sh
-
-EXPOSE 5000
-
-CMD /run.sh
