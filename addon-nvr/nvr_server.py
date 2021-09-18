@@ -58,6 +58,11 @@ def get_recordings():
                 }
             }
         </style>
+        <script>
+            var blurred = false;
+            window.onblur = function() { blurred = true; };
+            window.onfocus = function() { blurred && (location.reload()); };
+        </script>
     </head>
     <body>
         <ul>
@@ -119,12 +124,21 @@ def get_recordings():
 
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
-    return send_from_directory(video_file_path, file, max_age=0)
+    return send_from_directory(video_file_path, file, max_age=604800)
 
 
 @app.route("/images/<path:file>")
 def get_images_file(file):
-    return send_from_directory(image_file_path, file, max_age=0)
+    return send_from_directory(image_file_path, file, max_age=604800)
+
+
+@app.route("/images/latest")
+def get_cameras_images_latest():
+    file = file_manager.get_latest_image()
+    if file:
+        return send_from_directory(image_file_path, file, max_age=0)
+    else:
+        return "Not found", 404
 
 
 @app.route("/cameras/<path:camera_name>/capture/start")

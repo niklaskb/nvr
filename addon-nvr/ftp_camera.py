@@ -28,6 +28,7 @@ class FtpCamera(object):
         self._video_timeout_seconds = video_timeout_seconds
 
         self._last_motion_event = None
+        self._last_person_event = None
 
     def event_motion(self):
         self._last_motion_event = datetime.now()
@@ -35,7 +36,14 @@ class FtpCamera(object):
 
     def event_person(self):
         event_timestamp = datetime.now()
+        if (
+            self._last_person_event is not None
+            and event_timestamp < self._last_person_event + timedelta(seconds=1)
+        ):
+            return
+
         self._logger.info(f"Received person event at {event_timestamp}")
+        self._last_person_event = event_timestamp
 
         event_thread = threading.Thread(
             target=self._event_thread, args=(event_timestamp,), kwargs={}
