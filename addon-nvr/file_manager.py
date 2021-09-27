@@ -37,9 +37,7 @@ class FileManager(object):
         return self._get_latest_file(".mp4", self._video_file_path)
 
     def _get_latest_file(self, endswith, file_path):
-        files = list(
-            filter(lambda x: x.endswith(endswith), listdir(file_path))
-        )
+        files = list(filter(lambda x: x.endswith(endswith), listdir(file_path)))
         files.sort(reverse=True)
         if len(files) > 0:
             return files[0]
