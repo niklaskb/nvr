@@ -11,9 +11,6 @@ RUN pip3 install \
     flask \
     pytz
 
-RUN mkdir -p /media/videos
-RUN mkdir -p /media/images
-
 EXPOSE 5000
 
 CMD /run.sh

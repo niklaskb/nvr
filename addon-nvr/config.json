@@ -66,6 +66,7 @@
   ],
   "video_file_path": "/camera/videos/",
   "image_file_path": "/camera/images/",
+  "temp_file_path": "/camera/temp/",
   "capture_timeout": 1800,
   "purge_days": 7,
   "ftp_purge_days": 3,

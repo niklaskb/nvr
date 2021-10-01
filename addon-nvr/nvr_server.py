@@ -141,25 +141,6 @@ def get_cameras_images_latest():
         return "Not found", 404
 
 
-@app.route("/cameras/<path:camera_name>/capture/start")
-@require_internal
-def get_cameras_camera_capture_start(camera_name):
-    if camera_name not in capture_cameras:
-        abort(404)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    capture_cameras[camera_name].capture_start(timestamp)
-    return "OK"
-
-
-@app.route("/cameras/<path:camera_name>/capture/end")
-@require_internal
-def get_cameras_camera_capture_end(camera_name):
-    if camera_name not in capture_cameras:
-        abort(404)
-    capture_cameras[camera_name].capture_end()
-    return "OK"
-
-
 def http_stream(stream_camera):
     while True:
         frame = stream_camera.get_jpeg()
@@ -188,21 +169,51 @@ def get_cameras_stream_mjpeg():
     )
 
 
-@app.route("/cameras/<path:camera_name>/event/motion")
+@app.route("/cameras/<path:camera_name>/event/start")
 @require_internal
-def get_cameras_camera_event_motion(camera_name):
-    if camera_name not in ftp_cameras:
+def get_cameras_camera_event_start(camera_name):
+    if camera_name not in capture_cameras:
         abort(404)
-    ftp_cameras[camera_name].event_motion()
+    capture_cameras[camera_name].capture_start()
     return "OK"
 
 
-@app.route("/cameras/<path:camera_name>/event/person")
+@app.route("/cameras/<path:camera_name>/event/end")
 @require_internal
-def get_cameras_camera_event_person(camera_name):
-    if camera_name not in ftp_cameras:
+def get_cameras_camera_event_end(camera_name):
+    if camera_name not in capture_cameras:
         abort(404)
-    ftp_cameras[camera_name].event_person()
+    capture_cameras[camera_name].capture_end()
+    return "OK"
+
+
+@app.route("/cameras/<path:camera_name>/event/keep")
+@require_internal
+def get_cameras_camera_event_keep(camera_name):
+    if camera_name not in capture_cameras:
+        abort(404)
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    capture_cameras[camera_name].capture_keep(timestamp)
+    return "OK"
+
+
+@app.route("/cameras/<path:camera_name>/capture/start")
+@require_internal
+def get_cameras_camera_capture_start(camera_name):
+    if camera_name not in capture_cameras:
+        abort(404)
+    capture_cameras[camera_name].capture_start()
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    capture_cameras[camera_name].capture_keep(timestamp)
+    return "OK"
+
+
+@app.route("/cameras/<path:camera_name>/capture/end")
+@require_internal
+def get_cameras_camera_capture_end(camera_name):
+    if camera_name not in capture_cameras:
+        abort(404)
+    capture_cameras[camera_name].capture_end()
     return "OK"
 
 
@@ -239,6 +250,7 @@ if __name__ == "__main__":
             camera_config["capture"]["ffmpeg_options"],
             config["video_file_path"],
             config["image_file_path"],
+            config["temp_file_path"],
             config["capture_timeout"],
         )
 

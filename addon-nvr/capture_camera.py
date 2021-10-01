@@ -16,6 +16,7 @@ class CaptureCamera(object):
         ffmpeg_options,
         video_file_path,
         image_file_path,
+        temp_file_path,
         capture_timeout,
     ):
         self._logger = logger
@@ -25,11 +26,13 @@ class CaptureCamera(object):
         self._ffmpeg_options = ffmpeg_options
         self._video_file_path = video_file_path
         self._image_file_path = image_file_path
+        self._temp_file_path = temp_file_path
         self._capture_timeout = capture_timeout
+        self._event_timestamp = None
 
-    def _capture_video(self, filename):
+    def _capture_video(self):
         start = time.time()
-        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._video_file_path}{filename}.mp4'
+        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}tmp.mp4'
         self._logger.info(
             f"Launching capture video process for {self._camera_name}: {command}"
         )
@@ -43,11 +46,9 @@ class CaptureCamera(object):
         output = io.TextIOWrapper(self._capture_video_process.stdout)
         self._capture_video_process.wait()
         output
-        self._capture_video_process = None
         elapsed = time.time() - start
-        self._logger.info(
-            f"Capture video process for {self._camera_name} done in {elapsed:.1f}s"
-        )
+        self._logger.info(f"Capture video process for {self._camera_name} done in {elapsed:.1f}s")
+        self._capture_video_process = None
 
     # def _rewrite_video(self, filename):
     #     start = time.time()
@@ -63,9 +64,9 @@ class CaptureCamera(object):
     #     elapsed = time.time() - start
     #     self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
 
-    def _capture_image(self, filename):
+    def _capture_image(self):
         start = time.time()
-        command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._image_file_path}{filename}.jpeg"
+        command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._temp_file_path}tmp.jpeg"
         self._logger.info(
             f"Launching capture image process for {self._camera_name}: {command}"
         )
@@ -76,26 +77,36 @@ class CaptureCamera(object):
         process.wait()
         output
         elapsed = time.time() - start
-        self._logger.info(
-            f"Capture image process done for {self._camera_name} in {elapsed:.1f}s"
-        )
+        self._logger.info(f"Capture image process done for {self._camera_name} in {elapsed:.1f}s")
 
-    def capture_start(self, timestamp):
+    def capture_start(self):
         if self._capture_video_process:
             return
-        filename = f"{timestamp}_{self._camera_name}"
 
         video_thread = threading.Thread(
-            target=self._capture_video, args=(filename,), kwargs={}
+            target=self._capture_video, args=(), kwargs={}
         )
         image_thread = threading.Thread(
-            target=self._capture_image, args=(filename,), kwargs={}
+            target=self._capture_image, args=(), kwargs={}
         )
 
         video_thread.start()
         image_thread.start()
 
+    def capture_keep(self, timestamp):
+        self._event_timestamp = timestamp
+
     def capture_end(self):
         if self._capture_video_process:
             self._logger.info(f"Terminating video process for {self._camera_name}")
             os.killpg(os.getpgid(self._capture_video_process.pid), signal.SIGTERM)
+            if self._event_timestamp:
+                self._logger.info(f"Keeping captured files for {self._camera_name}")
+                filename = f"{self._event_timestamp}_{self._camera_name}"
+                os.rename(f"{self._temp_file_path}tmp.jpeg", f"{self._image_file_path}{filename}.jpeg")
+                os.rename(f"{self._temp_file_path}tmp.mp4", f"{self._video_file_path}{filename}.mp4")
+                self._event_timestamp = None
+            else:
+                self._logger.info(f"Discarding captured files for {self._camera_name}")
+                os.remove(f"{self._temp_file_path}tmp.jpeg")
+                os.remove(f"{self._temp_file_path}tmp.mp4")
