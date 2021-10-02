@@ -247,6 +247,7 @@ if __name__ == "__main__":
             app.logger,
             camera_config["name"],
             camera_config["capture"]["url"],
+            camera_config["capture"]["image_url"],
             camera_config["capture"]["ffmpeg_options"],
             config["video_file_path"],
             config["image_file_path"],
