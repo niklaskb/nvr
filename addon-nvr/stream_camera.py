@@ -96,7 +96,7 @@ class _InternalStreamCamera(object):
         self._is_loading = False
         self._is_paused = False
         self._unread_frames = 0
-        self._max_unread_frames = 30
+        self._max_unread_frames = 100
 
     def _create_loading_image(self):
         img = numpy.zeros((self._height, self._width, 3), numpy.uint8)
