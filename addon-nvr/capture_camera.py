@@ -32,7 +32,7 @@ class CaptureCamera(object):
 
     def _capture_video(self):
         start = time.time()
-        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}tmp.mp4'
+        command = f'ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}{self._camera_name}_tmp.mp4'
         self._logger.info(
             f"Launching capture video process for {self._camera_name}: {command}"
         )
@@ -66,7 +66,7 @@ class CaptureCamera(object):
 
     def _capture_image(self):
         start = time.time()
-        command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._temp_file_path}tmp.jpeg"
+        command = f"ffmpeg -loglevel panic -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._temp_file_path}{self._camera_name}_tmp.jpeg"
         self._logger.info(
             f"Launching capture image process for {self._camera_name}: {command}"
         )
@@ -103,10 +103,10 @@ class CaptureCamera(object):
             if self._event_timestamp:
                 self._logger.info(f"Keeping captured files for {self._camera_name}")
                 filename = f"{self._event_timestamp}_{self._camera_name}"
-                os.rename(f"{self._temp_file_path}tmp.jpeg", f"{self._image_file_path}{filename}.jpeg")
-                os.rename(f"{self._temp_file_path}tmp.mp4", f"{self._video_file_path}{filename}.mp4")
+                os.rename(f"{self._temp_file_path}{self._camera_name}_tmp.jpeg", f"{self._image_file_path}{filename}.jpeg")
+                os.rename(f"{self._temp_file_path}{self._camera_name}_tmp.mp4", f"{self._video_file_path}{filename}.mp4")
                 self._event_timestamp = None
             else:
                 self._logger.info(f"Discarding captured files for {self._camera_name}")
-                os.remove(f"{self._temp_file_path}tmp.jpeg")
-                os.remove(f"{self._temp_file_path}tmp.mp4")
+                os.remove(f"{self._temp_file_path}{self._camera_name}_tmp.jpeg")
+                os.remove(f"{self._temp_file_path}{self._camera_name}_tmp.mp4")
