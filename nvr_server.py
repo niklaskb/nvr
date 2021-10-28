@@ -13,6 +13,7 @@ from combined_stream_camera import CombinedStreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
 from ftp_camera import FtpCamera
+from motion_detector import MotionDetector
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -217,6 +218,12 @@ def get_cameras_camera_capture_end(camera_name):
     return "OK"
 
 
+def _motion_callback(camera_name, motion):
+    if motion:
+        app.logger.info(f"Motion detected for {camera_name}")
+    else:
+        app.logger.info(f"Motion cleared for {camera_name}")
+
 if __name__ == "__main__":
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -241,6 +248,14 @@ if __name__ == "__main__":
             camera_config["stream"]["frame_sleep"],
             camera_config["stream"]["width"],
             camera_config["stream"]["height"],
+            MotionDetector(
+                app.logger,
+                camera_config["name"],
+                camera_config["stream"]["width"],
+                camera_config["stream"]["height"],
+                True,
+                _motion_callback
+            )
         )
 
         capture_cameras[camera_config["name"]] = CaptureCamera(

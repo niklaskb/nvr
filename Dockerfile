@@ -21,6 +21,7 @@ COPY __init__.py \
     config.json \
     file_manager.py \
     ftp_camera.py \
+    motion_detector.py \
     nvr_server.py \
     run.sh \
     stream_camera.py \

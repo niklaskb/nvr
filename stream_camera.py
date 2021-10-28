@@ -15,6 +15,7 @@ class StreamCamera(object):
         frame_sleep,
         width,
         height,
+        motion_detector
     ):
         self._logger = logger
         self._camera_name = camera_name
@@ -22,6 +23,7 @@ class StreamCamera(object):
         self._frame_sleep = frame_sleep
         self._width = width
         self._height = height
+        self._motion_detector = motion_detector
 
         self._streaming_process = None
         self._queue = multiprocessing.Queue()
@@ -47,6 +49,7 @@ class StreamCamera(object):
                     self._width,
                     self._height,
                     self._queue,
+                    self._motion_detector,
                 ),
             )
             self._streaming_process.start()
@@ -60,6 +63,7 @@ class StreamCamera(object):
         width,
         height,
         queue,
+        motion_detector,
     ):
         camera = _InternalStreamCamera(
             logger,
@@ -69,6 +73,7 @@ class StreamCamera(object):
             width,
             height,
             queue,
+            motion_detector,
         )
         camera.stream()
 
@@ -83,6 +88,7 @@ class _InternalStreamCamera(object):
         width,
         height,
         queue,
+        motion_detector,
     ):
         self._logger = logger
         self._camera_name = camera_name
@@ -91,6 +97,7 @@ class _InternalStreamCamera(object):
         self._width = width
         self._height = height
         self._queue = queue
+        self._motion_detector = motion_detector
 
         self._is_streaming = False
         self._is_loading = False
@@ -177,6 +184,7 @@ class _InternalStreamCamera(object):
         self._show_static_frame_thread.start()
 
         self._video_capture = cv2.VideoCapture(self._camera_url)
+        self._motion_detector.start()
         while True:
             success = self._video_capture.grab()
 
@@ -209,7 +217,11 @@ class _InternalStreamCamera(object):
                     self._show_static_frame_thread.join()
                     self._logger.info(f"Started camera stream for {self._camera_name}")
 
-                self._put_frame(frame)
+                debug_frame = self._motion_detector.detect_motion(frame)
+                if debug_frame is None:
+                    self._put_frame(frame)
+                else:
+                    self._put_frame(debug_frame)
 
         self._video_capture.release()
         self._frame = None
