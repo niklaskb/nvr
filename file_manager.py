@@ -7,11 +7,12 @@ import os
 
 
 class FileManager(object):
-    def __init__(self, logger, video_file_path, image_file_path, purge_days):
+    def __init__(self, logger, video_file_path, image_file_path, purge_video_days, purge_image_days):
         self._logger = logger
         self._video_file_path = video_file_path
         self._image_file_path = image_file_path
-        self._purge_days = purge_days
+        self._purge_video_days = purge_video_days
+        self._purge_image_days = purge_image_days
 
     def remove_old_videos(self):
         files = list(
@@ -20,9 +21,20 @@ class FileManager(object):
         for file in files:
             time = datetime.strptime(file[0:15], "%Y%m%d_%H%M%S")
             days = (datetime.now() - time).days
-            if days > self._purge_days:
+            if days > self._purge_video_days:
                 self._logger.info(f"Removing file {file}")
                 os.remove(f"{self._video_file_path}/{file}")
+
+    def remove_old_images(self):
+        files = list(
+            filter(lambda x: x.endswith(".jpeg"), listdir(self._image_file_path))
+        )
+        for file in files:
+            time = datetime.strptime(file[0:15], "%Y%m%d_%H%M%S")
+            days = (datetime.now() - time).days
+            if days > self._purge_image_days:
+                self._logger.info(f"Removing file {file}")
+                os.remove(f"{self._image_file_path}/{file}")
 
     def get_latest_image(self, camera):
         return self._get_latest_file(f"_{camera}.jpeg", self._image_file_path)

@@ -69,6 +69,7 @@ def get_recordings():
 """
 
     file_manager.remove_old_videos()
+    file_manager.remove_old_images()
 
     timezone = pytz.timezone("Europe/Stockholm")
     image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
@@ -285,7 +286,8 @@ if __name__ == "__main__":
         app.logger,
         config["video_file_path"],
         config["image_file_path"],
-        config["purge_days"],
+        config["purge_video_days"],
+        config["purge_image_days"],
     )
 
     if "combined_stream" in config:
