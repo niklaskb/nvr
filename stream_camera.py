@@ -4,6 +4,7 @@ import cv2
 import time
 import numpy
 import multiprocessing
+import os
 
 
 class StreamCamera(object):
@@ -70,6 +71,7 @@ class StreamCamera(object):
             height,
             queue,
         )
+        os.nice(10)
         camera.stream()
 
 

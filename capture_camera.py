@@ -71,23 +71,6 @@ class CaptureCamera(object):
     #     elapsed = time.time() - start
     #     self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
 
-    # def _capture_image(self):
-    #     start = time.time()
-    #     command = f"ffmpeg -loglevel error -nostats -y -rtsp_transport tcp -i {self._camera_url} -frames:v 1 {self._temp_file_path}{self._camera_name}_tmp.jpeg"
-    #     self._logger.info(
-    #         f"Launching capture image process for {self._camera_name}: {command}"
-    #     )
-    #     process = subprocess.Popen(
-    #         command, shell=True, stdout=subprocess.PIPE, bufsize=-1
-    #     )
-    #     output = io.TextIOWrapper(process.stdout)
-    #     process.wait()
-    #     output
-    #     elapsed = time.time() - start
-    #     self._logger.info(
-    #         f"Capture image process done for {self._camera_name} in {elapsed:.1f}s"
-    #     )
-
     def _capture_image(self):
         filename = f"{self._event_timestamp}_{self._camera_name}"
         start = time.time()
@@ -97,30 +80,13 @@ class CaptureCamera(object):
             f"Capture image done for {self._camera_name} in {elapsed:.1f}s"
         )
 
-    # def _keep_image(self):
-    #     filename = f"{self._event_timestamp}_{self._camera_name}"
-    #     start = datetime.now()
-    #     while datetime.now() < start + timedelta(seconds=10):
-    #         time.sleep(0.5)
-    #         if os.path.isfile(f"{self._temp_file_path}{self._camera_name}_tmp.jpeg"):
-    #             self._logger.info(
-    #                 f"Keeping captured image file for {self._camera_name}"
-    #             )
-    #             os.rename(
-    #                 f"{self._temp_file_path}{self._camera_name}_tmp.jpeg",
-    #                 f"{self._image_file_path}{filename}.jpeg",
-    #             )
-    #             break
-
     def capture_start(self):
         if self._capturing:
             return
         self._capturing = True
         video_thread = threading.Thread(target=self._capture_video, args=(), kwargs={})
-        # image_thread = threading.Thread(target=self._capture_image, args=(), kwargs={})
 
         video_thread.start()
-        # image_thread.start()
 
     def capture_keep(self, timestamp):
         if not self._capturing:
@@ -128,10 +94,6 @@ class CaptureCamera(object):
         self._event_timestamp = timestamp
         image_thread = threading.Thread(target=self._capture_image, args=(), kwargs={})
         image_thread.start()
-        # keep_image_thread = threading.Thread(
-        #     target=self._keep_image, args=(), kwargs={}
-        # )
-        # keep_image_thread.start()
 
     def capture_end(self):
         if not self._capturing:
