@@ -30,38 +30,61 @@ def require_internal(func):
     return wrapper_require_internal
 
 
+def _get_lastchanged():
+    image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
+    image_files.sort(reverse=True)
+    image_file_no_ext = path.splitext(image_files[0])[0]
+    return image_file_no_ext;
+
+@app.route("/recordings/lastchanged")
+def get_recordings_lastchanged():
+    return _get_lastchanged();
+
 @app.route("/recordings")
 def get_recordings():
-    html = """
+    html = f"""
 <!DOCTYPE html>
 <html>
     <head>
         <title>Recordings</title>
         <style>
-            body {
+            body {{
                 background: #FFF;
                 color: #1c1c1c;
                 font-family: Roboto,sans-serif;
                 font-weight: 400;
-            }
-            a {
+            }}
+            a {{
                 color: #1c1c1c;
                 text-decoration: none;
-            }
-            a:hover, a:active {
+            }}
+            a:hover, a:active {{
                 text-decoration: underline;
-            }
-            @media (prefers-color-scheme: dark) {
-                body, a {
+            }}
+            @media (prefers-color-scheme: dark) {{
+                body, a {{
                     background: #1c1c1c;
                     color: #FFF;
-                }
-            }
+                }}
+            }}
         </style>
         <script>
             var blurred = false;
-            window.onblur = function() { blurred = true; };
-            window.onfocus = function() { blurred && (location.reload()); };
+            window.onblur = function() {{ blurred = true; }};
+            window.onfocus = function() {{
+                if (blurred) {{
+                    var xhr = new XMLHttpRequest ();
+                    xhr.open ( "GET", "/recordings/lastchanged");
+                    xhr.onreadystatechange = function () {{
+                        if ( xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {{
+                            if (xhr.response != "{_get_lastchanged()}") {{
+                                location.reload();
+                            }}
+                        }}
+                    }}
+                    xhr.send ();
+                }}
+            }};
         </script>
     </head>
     <body>
