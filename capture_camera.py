@@ -6,6 +6,7 @@ import subprocess, io
 import signal
 import os
 import urllib.request
+import ssl
 
 
 class CaptureCamera(object):
@@ -74,7 +75,11 @@ class CaptureCamera(object):
     def _capture_image(self):
         filename = f"{self._event_timestamp}_{self._camera_name}"
         start = time.time()
-        urllib.request.urlretrieve(self._camera_image_url, f"{self._image_file_path}{filename}.jpeg")
+        ctx = ssl.create_default_context()
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+        with urllib.request.urlopen(self._camera_image_url, context=ctx) as u, open(f"{self._image_file_path}{filename}.jpeg", 'wb') as f:
+            f.write(u.read())
         elapsed = time.time() - start
         self._logger.info(
             f"Capture image done for {self._camera_name} in {elapsed:.1f}s"

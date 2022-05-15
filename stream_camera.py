@@ -148,7 +148,8 @@ class _InternalStreamCamera(object):
             self._unread_frames = 0
         else:
             try:
-                self._queue.get_nowait()
+                while not self._queue.empty():
+                    self._queue.get_nowait()
                 self._unread_frames = self._unread_frames + 1
             except Empty:
                 self._unread_frames = 0
@@ -212,6 +213,7 @@ class _InternalStreamCamera(object):
                     self._logger.info(f"Started camera stream for {self._camera_name}")
 
                 self._put_frame(frame)
+            time.sleep(0.01)
 
         self._video_capture.release()
         self._frame = None
