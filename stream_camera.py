@@ -5,6 +5,9 @@ import time
 import numpy
 import multiprocessing
 import os
+from datetime import datetime
+import logging
+import sys
 
 
 class StreamCamera(object):
@@ -24,56 +27,59 @@ class StreamCamera(object):
         self._width = width
         self._height = height
 
-        self._streaming_process = None
-        self._queue = multiprocessing.Queue()
+        self._frame_queue = multiprocessing.Queue()
+        self._get_frame_event = multiprocessing.Event()
+
+        self._streaming_process = multiprocessing.Process(
+            target=self._stream,
+            args=(
+                self._camera_name,
+                self._camera_url,
+                self._width,
+                self._height,
+                self._frame_queue,
+                self._get_frame_event
+            ),
+        )
+        self._streaming_process.start()
 
     def get_jpeg(self):
         frame = self.get_frame()
         return bytearray(cv2.imencode(".jpeg", frame)[1])
 
     def get_frame(self):
-        self._start_streaming()
-
-        return self._queue.get()
-
-    def _start_streaming(self):
-        if self._streaming_process is None or not self._streaming_process.is_alive():
-            self._streaming_process = multiprocessing.Process(
-                target=self._stream,
-                args=(
-                    self._logger,
-                    self._camera_name,
-                    self._camera_url,
-                    self._frame_sleep,
-                    self._width,
-                    self._height,
-                    self._queue,
-                ),
-            )
-            self._streaming_process.start()
+        time.sleep(self._frame_sleep)
+        self._get_frame_event.set()
+        self._get_frame_event.wait()
+        return self._frame_queue.get()
 
     def _stream(
         self,
-        logger,
         camera_name,
         camera_url,
-        frame_sleep,
         width,
         height,
-        queue,
+        frame_queue,
+        get_frame_event,
     ):
+        logger = logging.getLogger(__name__)
+        logger.setLevel(logging.INFO)
+        default_handler = logging.StreamHandler(sys.stdout)
+        default_handler.setFormatter(
+            logging.Formatter("[%(asctime)s] %(levelname)s in %(module)s: %(message)s")
+        )
+        logger.addHandler(default_handler)
         camera = _InternalStreamCamera(
             logger,
             camera_name,
             camera_url,
-            frame_sleep,
             width,
             height,
-            queue,
+            frame_queue,
+            get_frame_event,
         )
         os.nice(10)
         camera.stream()
-
 
 class _InternalStreamCamera(object):
     def __init__(
@@ -81,24 +87,89 @@ class _InternalStreamCamera(object):
         logger,
         camera_name,
         camera_url,
-        frame_sleep,
         width,
         height,
-        queue,
+        frame_queue,
+        get_frame_event,
     ):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_url = camera_url
-        self._frame_sleep = frame_sleep
         self._width = width
         self._height = height
-        self._queue = queue
+        self._frame_queue = frame_queue
+        self._get_frame_event = get_frame_event
 
-        self._is_streaming = False
-        self._is_loading = False
-        self._is_paused = False
-        self._unread_frames = 0
-        self._max_unread_frames = 100
+        self._streaming = False
+        self._loading = False
+        self._last_error_timestamp = None
+        self._static_frame = None
+        self._frame_count = 0
+        self._restart_threshold = 10 * 3600
+    
+    def _get_frame(self):
+        if self._static_frame is not None:
+            return self._static_frame
+        success, frame = self._video_capture.retrieve()
+        if not success:
+            self._logger.warning(f"Failed to retrieve frame for {self._camera_name}")
+        return frame
+
+    def _init_stream(self):
+        self._video_capture = cv2.VideoCapture(self._camera_url)
+        self._logger.info(f"Started camera stream for {self._camera_name}")
+        self._streaming = True
+        self._loading = False
+        self._last_error_timestamp = None
+        self._static_frame = None
+        self._frame_count = 0
+
+    def stream(self):
+        while True:
+            if not self._streaming:
+                if not self._loading and (self._last_error_timestamp is None or (datetime.now() - self._last_error_timestamp).seconds > 30):
+                    self._loading = True
+                    self._static_frame = self._create_loading_image()
+                    self._init_stream_thread = threading.Thread(
+                        target=self._init_stream
+                    )
+                    self._init_stream_thread.start()
+            
+            if self._streaming:
+                success = self._video_capture.grab()
+
+                if not success:
+                    self._logger.warning(f"Failed to grab frame for {self._camera_name}")
+                    self._static_frame = self._create_fail_image()
+                    self._frame = self._static_frame
+                    self._streaming = False
+                    self._last_error_timestamp = datetime.now()
+                    self._video_capture.release()
+                    self._video_capture = None
+                else:
+                    frame = self._get_frame()
+                    self._frame_count = self._frame_count + 1
+            else:
+                frame = self._static_frame
+                time.sleep(0.1)
+            
+            if self._get_frame_event.is_set():
+                self._empty_queue()
+                self._frame_queue.put(frame)
+                self._get_frame_event.clear()
+
+            if self._streaming and self._frame_count > self._restart_threshold:
+                self._logger.info(f"Reloading stream for {self._camera_name}")
+                self._streaming = False
+                self._video_capture.release()
+                self._video_capture = None
+
+    def _empty_queue(self):
+        try:
+            while not self._frame_queue.empty():
+                self._frame_queue.get_nowait()
+        except Empty:
+            pass
 
     def _create_loading_image(self):
         img = numpy.zeros((self._height, self._width, 3), numpy.uint8)
@@ -139,88 +210,3 @@ class _InternalStreamCamera(object):
         )
 
         return img
-
-    def _create_empty_image(self):
-        return numpy.zeros((self._height, self._width, 3), numpy.uint8)
-
-    def _put_frame(self, frame):
-        if self._queue.empty():
-            self._unread_frames = 0
-        else:
-            try:
-                while not self._queue.empty():
-                    self._queue.get_nowait()
-                self._unread_frames = self._unread_frames + 1
-            except Empty:
-                self._unread_frames = 0
-        self._queue.put(frame)
-
-    def _show_static_frame(self):
-        time.sleep(self._frame_sleep)  # Yield to other thread
-        frame = self._static_frame
-        while frame is not None:
-            self._put_frame(frame)
-            time.sleep(self._frame_sleep)
-            frame = self._static_frame
-
-    def stream(self):
-        if self._is_streaming:
-            return
-        self._is_streaming = True
-        self._is_loading = True
-        self._unread_frames = 0
-
-        self._logger.info(f"Starting camera stream for {self._camera_name}")
-
-        self._static_frame = self._create_loading_image()
-
-        self._show_static_frame_thread = threading.Thread(
-            target=self._show_static_frame
-        )
-        self._show_static_frame_thread.start()
-
-        self._video_capture = cv2.VideoCapture(self._camera_url)
-        while True:
-            success = self._video_capture.grab()
-
-            if not success:
-                self._logger.info(f"Failed to grab frame for {self._camera_name}")
-                self._static_frame = self._create_fail_image()
-                time.sleep(10)
-                self._static_frame = None
-                self._show_static_frame_thread.join()
-                break
-
-            if (
-                not self._queue.empty()
-                and self._unread_frames > self._max_unread_frames
-            ):
-                if not self._is_paused:
-                    self._is_paused = True
-                    self._put_frame(self._create_empty_image())
-                    self._logger.info(f"Paused camera stream for {self._camera_name}")
-            else:
-                success, frame = self._video_capture.retrieve()
-
-                if self._is_paused:
-                    self._is_paused = False
-                    self._logger.info(f"Resumed camera stream for {self._camera_name}")
-
-                if self._is_loading:
-                    self._is_loading = False
-                    self._static_frame = None
-                    self._show_static_frame_thread.join()
-                    self._logger.info(f"Started camera stream for {self._camera_name}")
-
-                self._put_frame(frame)
-            time.sleep(0.01)
-
-        self._video_capture.release()
-        self._frame = None
-        self._is_streaming = False
-        self._is_loading = False
-        try:
-            self._queue.get_nowait()
-        except Empty:
-            pass
-        self._logger.info(f"Camera stream stopped for {self._camera_name}")

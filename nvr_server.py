@@ -9,7 +9,6 @@ import json
 from os import listdir, path
 import ipaddress
 from stream_camera import StreamCamera
-from combined_stream_camera import CombinedStreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
 from ftp_camera import FtpCamera
@@ -182,17 +181,6 @@ def get_cameras_camera_stream_mjpeg(camera_name):
     )
 
 
-@app.route("/cameras/stream/mjpeg")
-@require_internal
-def get_cameras_stream_mjpeg():
-    if combined_stream_camera is None:
-        abort(404)
-    return Response(
-        http_stream(combined_stream_camera),
-        mimetype="multipart/x-mixed-replace; boundary=frame",
-    )
-
-
 @app.route("/cameras/<path:camera_name>/event/start")
 @require_internal
 def get_cameras_camera_event_start(camera_name):
@@ -242,20 +230,18 @@ def get_cameras_camera_capture_end(camera_name):
 
 
 if __name__ == "__main__":
+    app.logger.info(f"log logger 222")
     with open("config.json", "r") as f:
         config = json.load(f)
 
     video_file_path = config["video_file_path"]
     image_file_path = config["image_file_path"]
 
-    app.logger.info(image_file_path)
-
     stream_cameras = {}
     capture_cameras = {}
     ftp_cameras = {}
     camera_display_names = {}
 
-    combined_config = {}
     for camera_config in config["cameras"]:
         camera_display_names[camera_config["name"]] = camera_config["display_name"]
         stream_cameras[camera_config["name"]] = StreamCamera(
@@ -290,21 +276,6 @@ if __name__ == "__main__":
             config["ftp_video_timeout_seconds"],
         )
 
-        if "combined_stream" in camera_config:
-            combined_config[camera_config["name"]] = {}
-            combined_config[camera_config["name"]]["offset_width"] = camera_config[
-                "combined_stream"
-            ]["offset_width"]
-            combined_config[camera_config["name"]]["offset_height"] = camera_config[
-                "combined_stream"
-            ]["offset_height"]
-            combined_config[camera_config["name"]]["width"] = camera_config[
-                "combined_stream"
-            ]["width"]
-            combined_config[camera_config["name"]]["height"] = camera_config[
-                "combined_stream"
-            ]["height"]
-
     file_manager = FileManager(
         app.logger,
         config["video_file_path"],
@@ -312,14 +283,5 @@ if __name__ == "__main__":
         config["purge_video_days"],
         config["purge_image_days"],
     )
-
-    if "combined_stream" in config:
-        combined_stream_camera = CombinedStreamCamera(
-            app.logger,
-            stream_cameras,
-            config["combined_stream"]["width"],
-            config["combined_stream"]["height"],
-            combined_config,
-        )
 
     app.run(host="0.0.0.0")

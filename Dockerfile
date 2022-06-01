@@ -17,7 +17,6 @@ CMD /run.sh
 
 COPY __init__.py \
     capture_camera.py \
-    combined_stream_camera.py \
     config.json \
     file_manager.py \
     ftp_camera.py \
