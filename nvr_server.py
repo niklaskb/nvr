@@ -135,7 +135,7 @@ def get_recordings():
             if matching_image in matching_videos:
                 html += f'<a target="_blank" href="./videos/{matching_image}.mp4"><img style="width:90%;" src="./images/{matching_image}.jpeg" alt="{camera_display_names[camera_name]}" /></a>'
             else:
-                html += f'<a target="_blank" href="./images/{matching_image}.jpeg"><img style="width:90%;" src="./images/{matching_image}.jpeg" alt="{camera_display_names[camera_name]}" /></a>'
+                html += f'<img style="width:90%;" src="./images/{matching_image}.jpeg" alt="{camera_display_names[camera_name]}" />'
         html += "</li>"
     html += """
         </ul>

@@ -5,7 +5,7 @@
       "display_name": "Uppfart",
       "capture": {
         "url": "rtsp://admin:password@192.168.1.21:554/h265Preview_01_main",
-        "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password",
+        "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password&width=640&height=360",
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -tag:v hvc1 -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
@@ -21,7 +21,7 @@
       "display_name": "Framsida",
       "capture": {
         "url": "rtsp://admin:password@192.168.1.22:554/h264Preview_01_main",
-        "image_url": "https://192.168.1.22/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password",
+        "image_url": "https://192.168.1.22/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password&width=640&height=480",
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
@@ -37,7 +37,7 @@
       "display_name": "Trädgård",
       "capture": {
         "url": "rtsp://admin:password@192.168.1.23:554/h264Preview_01_main",
-        "image_url": "https://192.168.1.23/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password",
+        "image_url": "https://192.168.1.23/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password=password&width=640&height=480",
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
