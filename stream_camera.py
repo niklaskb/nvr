@@ -27,8 +27,8 @@ class StreamCamera(object):
         self._width = width
         self._height = height
 
-        self._frame_queue = multiprocessing.Queue()
-        self._get_frame_event = multiprocessing.Event()
+        self._return_frame_queue = multiprocessing.Queue()
+        self._request_frame_queue = multiprocessing.Queue()
 
         self._streaming_process = multiprocessing.Process(
             target=self._stream,
@@ -37,8 +37,8 @@ class StreamCamera(object):
                 self._camera_url,
                 self._width,
                 self._height,
-                self._frame_queue,
-                self._get_frame_event
+                self._return_frame_queue,
+                self._request_frame_queue
             ),
         )
         self._streaming_process.start()
@@ -49,9 +49,16 @@ class StreamCamera(object):
 
     def get_frame(self):
         time.sleep(self._frame_sleep)
-        self._get_frame_event.set()
-        self._get_frame_event.wait()
-        return self._frame_queue.get()
+        frame = None
+        try:
+            if not self._return_frame_queue.empty():
+                frame = self._return_frame_queue.get_nowait()
+        except Empty:
+            pass
+        if frame is None:
+            self._request_frame_queue.put(True)
+            frame = self._return_frame_queue.get()
+        return frame
 
     def _stream(
         self,
@@ -59,8 +66,8 @@ class StreamCamera(object):
         camera_url,
         width,
         height,
-        frame_queue,
-        get_frame_event,
+        return_frame_queue,
+        request_frame_queue,
     ):
         logger = logging.getLogger(__name__)
         logger.setLevel(logging.INFO)
@@ -75,8 +82,8 @@ class StreamCamera(object):
             camera_url,
             width,
             height,
-            frame_queue,
-            get_frame_event,
+            return_frame_queue,
+            request_frame_queue,
         )
         os.nice(10)
         camera.stream()
@@ -89,16 +96,16 @@ class _InternalStreamCamera(object):
         camera_url,
         width,
         height,
-        frame_queue,
-        get_frame_event,
+        return_frame_queue,
+        request_frame_queue,
     ):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_url = camera_url
         self._width = width
         self._height = height
-        self._frame_queue = frame_queue
-        self._get_frame_event = get_frame_event
+        self._return_frame_queue = return_frame_queue
+        self._request_frame_queue = request_frame_queue
 
         self._streaming = False
         self._loading = False
@@ -121,7 +128,6 @@ class _InternalStreamCamera(object):
         self._streaming = True
         self._loading = False
         self._last_error_timestamp = None
-        self._static_frame = None
         self._frame_count = 0
 
     def stream(self):
@@ -141,22 +147,22 @@ class _InternalStreamCamera(object):
                 if not success:
                     self._logger.warning(f"Failed to grab frame for {self._camera_name}")
                     self._static_frame = self._create_fail_image()
-                    self._frame = self._static_frame
                     self._streaming = False
                     self._last_error_timestamp = datetime.now()
                     self._video_capture.release()
                     self._video_capture = None
                 else:
-                    frame = self._get_frame()
+                    self._static_frame = None
                     self._frame_count = self._frame_count + 1
             else:
-                frame = self._static_frame
                 time.sleep(0.1)
             
-            if self._get_frame_event.is_set():
-                self._empty_queue()
-                self._frame_queue.put(frame)
-                self._get_frame_event.clear()
+            frame = None
+            while not self._request_frame_queue.empty():
+                if frame is None:
+                    frame = self._get_frame()
+                self._return_frame_queue.put(frame)
+                self._request_frame_queue.get_nowait()
 
             if self._streaming and self._frame_count > self._restart_threshold:
                 self._logger.info(f"Reloading stream for {self._camera_name}")
@@ -166,8 +172,8 @@ class _InternalStreamCamera(object):
 
     def _empty_queue(self):
         try:
-            while not self._frame_queue.empty():
-                self._frame_queue.get_nowait()
+            while not self._return_frame_queue.empty():
+                self._return_frame_queue.get_nowait()
         except Empty:
             pass
 
