@@ -18,8 +18,8 @@ CMD /run.sh
 COPY __init__.py \
     capture_camera.py \
     config.json \
+    secrets.json \
     file_manager.py \
-    ftp_camera.py \
     nvr_server.py \
     run.sh \
     stream_camera.py \

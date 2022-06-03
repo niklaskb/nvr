@@ -11,7 +11,6 @@ import ipaddress
 from stream_camera import StreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
-from ftp_camera import FtpCamera
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -228,18 +227,23 @@ def get_cameras_camera_capture_end(camera_name):
     capture_cameras[camera_name].capture_end()
     return "OK"
 
+def _replace_secrets(secrets, value):
+    for secret_key, secret_value in secrets.items():
+        value = value.replace(f"{{{secret_key}}}", secret_value)
+    return value
 
 if __name__ == "__main__":
-    app.logger.info(f"log logger 222")
     with open("config.json", "r") as f:
         config = json.load(f)
+
+    with open("secrets.json", "r") as f:
+        secrets = json.load(f)
 
     video_file_path = config["video_file_path"]
     image_file_path = config["image_file_path"]
 
     stream_cameras = {}
     capture_cameras = {}
-    ftp_cameras = {}
     camera_display_names = {}
 
     for camera_config in config["cameras"]:
@@ -247,33 +251,23 @@ if __name__ == "__main__":
         stream_cameras[camera_config["name"]] = StreamCamera(
             app.logger,
             camera_config["name"],
-            camera_config["stream"]["url"],
+            _replace_secrets(secrets, camera_config["stream"]["url"]),
             camera_config["stream"]["frame_sleep"],
             camera_config["stream"]["width"],
             camera_config["stream"]["height"],
+            camera_config["stream"]["restart_threshold"],
         )
 
         capture_cameras[camera_config["name"]] = CaptureCamera(
             app.logger,
             camera_config["name"],
-            camera_config["capture"]["url"],
-            camera_config["capture"]["image_url"],
+            _replace_secrets(secrets, camera_config["capture"]["url"]),
+            _replace_secrets(secrets, camera_config["capture"]["image_url"]),
             camera_config["capture"]["ffmpeg_options"],
             config["video_file_path"],
             config["image_file_path"],
             config["temp_file_path"],
             config["capture_timeout"],
-        )
-
-        ftp_cameras[camera_config["name"]] = FtpCamera(
-            app.logger,
-            camera_config["name"],
-            camera_config["ftp_upload_path"],
-            config["image_file_path"],
-            config["video_file_path"],
-            config["ftp_purge_days"],
-            config["ftp_image_timeout_seconds"],
-            config["ftp_video_timeout_seconds"],
         )
 
     file_manager = FileManager(

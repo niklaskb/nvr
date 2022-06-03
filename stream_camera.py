@@ -19,13 +19,10 @@ class StreamCamera(object):
         frame_sleep,
         width,
         height,
+        restart_threshold,
     ):
         self._logger = logger
-        self._camera_name = camera_name
-        self._camera_url = camera_url
         self._frame_sleep = frame_sleep
-        self._width = width
-        self._height = height
 
         self._return_frame_queue = multiprocessing.Queue()
         self._request_frame_queue = multiprocessing.Queue()
@@ -33,10 +30,12 @@ class StreamCamera(object):
         self._streaming_process = multiprocessing.Process(
             target=self._stream,
             args=(
-                self._camera_name,
-                self._camera_url,
-                self._width,
-                self._height,
+                camera_name,
+                camera_url,
+                frame_sleep,
+                width,
+                height,
+                restart_threshold,
                 self._return_frame_queue,
                 self._request_frame_queue
             ),
@@ -64,8 +63,10 @@ class StreamCamera(object):
         self,
         camera_name,
         camera_url,
+        frame_sleep,
         width,
         height,
+        restart_threshold,
         return_frame_queue,
         request_frame_queue,
     ):
@@ -80,8 +81,10 @@ class StreamCamera(object):
             logger,
             camera_name,
             camera_url,
+            frame_sleep,
             width,
             height,
+            restart_threshold,
             return_frame_queue,
             request_frame_queue,
         )
@@ -94,16 +97,20 @@ class _InternalStreamCamera(object):
         logger,
         camera_name,
         camera_url,
+        frame_sleep,
         width,
         height,
+        restart_threshold,
         return_frame_queue,
         request_frame_queue,
     ):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_url = camera_url
+        self._frame_sleep = frame_sleep
         self._width = width
         self._height = height
+        self._restart_threshold = restart_threshold
         self._return_frame_queue = return_frame_queue
         self._request_frame_queue = request_frame_queue
 
@@ -112,7 +119,6 @@ class _InternalStreamCamera(object):
         self._last_error_timestamp = None
         self._static_frame = None
         self._frame_count = 0
-        self._restart_threshold = 10 * 3600
     
     def _get_frame(self):
         if self._static_frame is not None:
@@ -155,7 +161,7 @@ class _InternalStreamCamera(object):
                     self._static_frame = None
                     self._frame_count = self._frame_count + 1
             else:
-                time.sleep(0.1)
+                time.sleep(self._frame_sleep)
             
             frame = None
             while not self._request_frame_queue.empty():
