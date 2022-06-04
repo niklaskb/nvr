@@ -13,7 +13,7 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 360,
-        "restart_threshold": 3000
+        "restart_threshold": 6000
       }
     },
     {
@@ -29,7 +29,7 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,
-        "restart_threshold": 3000
+        "restart_threshold": 6000
       }
     },
     {
@@ -45,7 +45,7 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,
-        "restart_threshold": 3000
+        "restart_threshold": 6000
       }
     }
   ],

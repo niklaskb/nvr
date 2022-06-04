@@ -1,4 +1,4 @@
-FROM ubuntu:21.04
+FROM ubuntu:22.04
 
 RUN apt update && apt upgrade -y
 
@@ -7,9 +7,9 @@ RUN DEBIAN_FRONTEND=noninteractive apt install -y \
     python3-opencv \
     python3-pip
 
-RUN pip3 install \
-    flask \
-    pytz
+COPY requirements.txt /
+
+RUN pip3 install -r requirements.txt
 
 EXPOSE 5000
 

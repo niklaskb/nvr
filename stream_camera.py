@@ -116,7 +116,7 @@ class _InternalStreamCamera(object):
 
         self._streaming = False
         self._loading = False
-        self._last_error_timestamp = None
+        self._last_init_timestamp = None
         self._static_frame = None
         self._frame_count = 0
     
@@ -129,19 +129,20 @@ class _InternalStreamCamera(object):
         return frame
 
     def _init_stream(self):
+        self._logger.info(f"Initializing camera stream for {self._camera_name}")
         self._video_capture = cv2.VideoCapture(self._camera_url)
         self._logger.info(f"Started camera stream for {self._camera_name}")
         self._streaming = True
         self._loading = False
-        self._last_error_timestamp = None
         self._frame_count = 0
 
     def stream(self):
         while True:
             if not self._streaming:
-                if not self._loading and (self._last_error_timestamp is None or (datetime.now() - self._last_error_timestamp).seconds > 30):
+                if not self._loading and (self._last_init_timestamp is None or (datetime.now() - self._last_init_timestamp).seconds > 30):
                     self._loading = True
                     self._static_frame = self._create_loading_image()
+                    self._last_init_timestamp = datetime.now()
                     self._init_stream_thread = threading.Thread(
                         target=self._init_stream
                     )
@@ -154,7 +155,6 @@ class _InternalStreamCamera(object):
                     self._logger.warning(f"Failed to grab frame for {self._camera_name}")
                     self._static_frame = self._create_fail_image()
                     self._streaming = False
-                    self._last_error_timestamp = datetime.now()
                     self._video_capture.release()
                     self._video_capture = None
                 else:
