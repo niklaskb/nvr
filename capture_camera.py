@@ -1,4 +1,3 @@
-from datetime import datetime, timedelta
 import threading
 import time
 from os import listdir
@@ -57,20 +56,6 @@ class CaptureCamera(object):
         )
         self._capture_video_process = None
         self._capturing = False
-
-    # def _rewrite_video(self, filename):
-    #     start = time.time()
-    #     command = f'ffmpeg -loglevel error -nostats -y -i {self._video_file_path}{filename}.tmp.mp4 -metadata title="" -f mp4 -c copy {self._video_file_path}{filename}.mp4'
-    #     self._logger.info(f"Launching rewrite video process: {command}")
-    #     rewrite_video_process = subprocess.Popen(
-    #         command, shell=True, stdout=subprocess.PIPE, bufsize=-1
-    #     )
-    #     output = io.TextIOWrapper(rewrite_video_process.stdout)
-    #     rewrite_video_process.wait()
-    #     output
-    #     os.remove(f"{self._video_file_path}{filename}.tmp.mp4")
-    #     elapsed = time.time() - start
-    #     self._logger.info(f"Rewrite video process done in {elapsed:.1f}s")
 
     def _capture_image(self):
         filename = f"{self._event_timestamp}_{self._camera_name}"

@@ -14,6 +14,10 @@
         "width": 640,
         "height": 360,
         "restart_threshold": 6000
+      },
+      "timelapse": {
+        "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={driveway_password}",
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
       }
     },
     {
@@ -30,6 +34,10 @@
         "width": 640,
         "height": 480,
         "restart_threshold": 6000
+      },
+      "timelapse": {
+        "image_url": "https://192.168.1.22/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={front_password}",
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
       }
     },
     {
@@ -46,12 +54,18 @@
         "width": 640,
         "height": 480,
         "restart_threshold": 6000
+      },
+      "timelapse": {
+        "image_url": "https://192.168.1.23/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={garden_password}",
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
       }
     }
   ],
-  "video_file_path": "/camera/videos/",
-  "image_file_path": "/camera/images/",
-  "temp_file_path": "/camera/temp/",
+  "video_file_path": "./camera/videos/",
+  "image_file_path": "./camera/images/",
+  "timelapse_file_path": "./camera/timelapse/",
+  "temp_video_file_path": "./camera/temp/videos/",
+  "temp_timelapse_file_path": "./camera/temp/timelapse/",
   "capture_timeout": 1800,
   "purge_video_days": 7,
   "purge_image_days": 7

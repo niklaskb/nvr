@@ -23,6 +23,7 @@ COPY __init__.py \
     nvr_server.py \
     run.sh \
     stream_camera.py \
+    timelapse_camera.py \
     /
 
 RUN chmod a+x /run.sh

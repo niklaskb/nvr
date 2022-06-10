@@ -1,4 +1,3 @@
-import sys
 from flask import Flask
 from flask import request, send_from_directory, abort
 from flask import Response
@@ -11,6 +10,10 @@ import ipaddress
 from stream_camera import StreamCamera
 from capture_camera import CaptureCamera
 from file_manager import FileManager
+from timelapse_camera import TimelapseCamera
+import schedule
+import threading
+import time
 
 app = Flask(__name__)
 app.logger.setLevel(logging.INFO)
@@ -144,6 +147,61 @@ def get_recordings():
     return html
 
 
+@app.route("/timelapses")
+def get_timelapses():
+    html = f"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Timelapses</title>
+        <style>
+            body {{
+                background: #FFF;
+                color: #1c1c1c;
+                font-family: Roboto,sans-serif;
+                font-weight: 400;
+            }}
+            a {{
+                color: #1c1c1c;
+                text-decoration: none;
+            }}
+            a:hover, a:active {{
+                text-decoration: underline;
+            }}
+            @media (prefers-color-scheme: dark) {{
+                body, a {{
+                    background: #1c1c1c;
+                    color: #FFF;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <ul>
+"""
+    timezone = pytz.timezone("Europe/Stockholm")
+    timelapse_files = list(filter(lambda x: x.endswith(".mp4"), listdir(timelapse_file_path)))
+    timelapse_files.sort(reverse=True)
+
+
+
+    for timelapse_file in timelapse_files:
+        timelapse_file_no_ext = path.splitext(timelapse_file)[0]
+        year = timelapse_file_no_ext[0:3]
+        month = timelapse_file_no_ext[3:4]
+        day = timelapse_file_no_ext[4:5]
+        camera_name = timelapse_file_no_ext[16:]
+
+        html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}-{month}-{day}: {camera_name}</a></li>'
+
+    html += """
+        </ul>
+    </body>
+</html>
+"""
+    return html
+
+
 @app.route("/videos/<path:file>")
 def get_videos_file(file):
     return send_from_directory(video_file_path, file, max_age=604800)
@@ -232,6 +290,16 @@ def _replace_secrets(secrets, value):
         value = value.replace(f"{{{secret_key}}}", secret_value)
     return value
 
+def _schedule(timelapse_camera):
+    schedule.every().minute.at(":00").do(timelapse_camera.capture_image_async)
+    schedule.every().minute.at(":30").do(timelapse_camera.capture_image_async)
+    schedule.every().day.at("02:02:02").do(timelapse_camera.build_video)
+
+def _run_schedule():
+    while True:
+        schedule.run_pending()
+        time.sleep(0.5)
+
 if __name__ == "__main__":
     with open("config.json", "r") as f:
         config = json.load(f)
@@ -240,11 +308,13 @@ if __name__ == "__main__":
         secrets = json.load(f)
 
     video_file_path = config["video_file_path"]
+    timelapse_file_path = config["timelapse_file_path"]
     image_file_path = config["image_file_path"]
 
     stream_cameras = {}
     capture_cameras = {}
     camera_display_names = {}
+    timelapse_cameras = {}
 
     for camera_config in config["cameras"]:
         camera_display_names[camera_config["name"]] = camera_config["display_name"]
@@ -266,9 +336,22 @@ if __name__ == "__main__":
             camera_config["capture"]["ffmpeg_options"],
             config["video_file_path"],
             config["image_file_path"],
-            config["temp_file_path"],
+            config["temp_video_file_path"],
             config["capture_timeout"],
         )
+
+        timelapse_camera = TimelapseCamera(
+            app.logger,
+            camera_config["name"],
+            _replace_secrets(secrets, camera_config["timelapse"]["image_url"]),
+            camera_config["timelapse"]["ffmpeg_options"],
+            config["timelapse_file_path"],
+            config["temp_timelapse_file_path"],
+        )
+
+        timelapse_cameras[camera_config["name"]] = timelapse_camera
+
+        _schedule(timelapse_camera)
 
     file_manager = FileManager(
         app.logger,
@@ -277,5 +360,12 @@ if __name__ == "__main__":
         config["purge_video_days"],
         config["purge_image_days"],
     )
+
+    schedule_thread = threading.Thread(
+        target=_run_schedule
+    )
+    schedule_thread.start()
+
+    app.logger.info(f"Init done")
 
     app.run(host="0.0.0.0")
