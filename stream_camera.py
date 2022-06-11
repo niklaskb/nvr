@@ -46,7 +46,7 @@ class StreamCamera(object):
 
     def get_jpeg(self):
         frame = self.get_frame()
-        return bytearray(cv2.imencode(".jpeg", frame, [cv2.IMWRITE_JPEG_QUALITY, compression])[1])
+        return bytearray(cv2.imencode(".jpeg", frame, [cv2.IMWRITE_JPEG_QUALITY, self._compression])[1])
 
     def get_frame(self):
         time.sleep(self._frame_sleep)

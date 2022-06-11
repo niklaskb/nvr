@@ -55,7 +55,9 @@ class CaptureCamera(object):
             f"Capture video process for {self._camera_name} done in {elapsed:.1f}s"
         )
         self._capture_video_process = None
-        self._capturing = False
+        if self._capturing:
+            self._logger.info(f"Capture video process timed out for {self._camera_name}")
+            self.capture_end()
 
     def _capture_image(self):
         filename = f"{self._event_timestamp}_{self._camera_name}"
@@ -88,8 +90,18 @@ class CaptureCamera(object):
     def capture_end(self):
         if not self._capturing:
             return
-        self._logger.info(f"Terminating video process for {self._camera_name}")
-        os.killpg(os.getpgid(self._capture_video_process.pid), signal.SIGTERM)
+        self._capturing = False
+
+        pgid = None
+        try:
+            pgid = os.getpgid(self._capture_video_process.pid)
+        except Exception:
+            self._logger.info(f"No running video process for {self._camera_name}")
+        if pgid is not None:
+            self._logger.info(f"Terminating video process for {self._camera_name}")
+            os.killpg(pgid, signal.SIGTERM)
+        
+        
         if self._event_timestamp:
             self._logger.info(
                 f"Keeping captured video file for {self._camera_name}"

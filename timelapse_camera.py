@@ -34,9 +34,9 @@ class TimelapseCamera(object):
         self._capture_image_thread.start()
 
     def _capture_image(self):
-        self._logger.info( f"Starting timelapse image capture for {self._camera_name}")
+        self._logger.debug( f"Starting timelapse image capture for {self._camera_name}")
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{self._camera_name}_{timestamp}"
+        filename = f"{timestamp}_{self._camera_name}"
         start = time.time()
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
@@ -61,22 +61,20 @@ class TimelapseCamera(object):
         self._logger.info(
             f"Launching timelapse video build process for {self._camera_name}: {command}"
         )
-        self._capture_video_process = subprocess.Popen(
+        build_video_process = subprocess.Popen(
             command,
             shell=True,
             stdout=subprocess.PIPE,
             bufsize=-1,
             preexec_fn=self._preexec_fn,
         )
-        output = io.TextIOWrapper(self._capture_video_process.stdout)
-        self._capture_video_process.wait()
+        output = io.TextIOWrapper(build_video_process.stdout)
+        build_video_process.wait()
         output
         elapsed = time.time() - start
         self._logger.info(
             f"Timelapse video build process for {self._camera_name} done in {elapsed:.1f}s"
         )
-        self._capture_video_process = None
-        self._capturing = False
 
     def build_video(self):
         yesterdays_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
@@ -87,7 +85,8 @@ class TimelapseCamera(object):
             filter(lambda x: x.endswith(".jpeg"), listdir(self._temp_file_path))
         )
 
-        for file in files:
-            d = file.rsplit("_", 2)[1]
-            if d == yesterdays_date:
-                os.remove(f"{self._temp_file_path}/{file}")
+        if os.path.isfile(f"{self._video_file_path}{yesterdays_date}_{self._camera_name}.mp4"):
+            for file in files:
+                d = file.rsplit("_", 2)[1]
+                if d == yesterdays_date:
+                    os.remove(f"{self._temp_file_path}/{file}")

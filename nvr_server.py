@@ -187,10 +187,10 @@ def get_timelapses():
 
     for timelapse_file in timelapse_files:
         timelapse_file_no_ext = path.splitext(timelapse_file)[0]
-        year = timelapse_file_no_ext[0:3]
-        month = timelapse_file_no_ext[3:4]
-        day = timelapse_file_no_ext[4:5]
-        camera_name = timelapse_file_no_ext[16:]
+        year = timelapse_file_no_ext[0:4]
+        month = timelapse_file_no_ext[4:6]
+        day = timelapse_file_no_ext[6:8]
+        camera_name = timelapse_file_no_ext[9:]
 
         html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}-{month}-{day}: {camera_name}</a></li>'
 
@@ -220,6 +220,9 @@ def get_cameras_images_latest():
     else:
         return "Not found", 404
 
+@app.route("/timelapses/<path:file>")
+def get_timelapses_file(file):
+    return send_from_directory(timelapse_file_path, file, max_age=604800)
 
 def http_stream(stream_camera):
     while True:

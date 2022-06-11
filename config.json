@@ -69,7 +69,7 @@
   "timelapse_file_path": "./camera/timelapse/",
   "temp_video_file_path": "./camera/temp/videos/",
   "temp_timelapse_file_path": "./camera/temp/timelapse/",
-  "capture_timeout": 1800,
+  "capture_timeout": 3600,
   "purge_video_days": 7,
   "purge_image_days": 7
 }
