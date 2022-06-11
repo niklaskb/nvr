@@ -326,6 +326,7 @@ if __name__ == "__main__":
             camera_config["stream"]["width"],
             camera_config["stream"]["height"],
             camera_config["stream"]["restart_threshold"],
+            camera_config["stream"]["compression"],
         )
 
         capture_cameras[camera_config["name"]] = CaptureCamera(

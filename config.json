@@ -13,7 +13,8 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 360,
-        "restart_threshold": 6000
+        "restart_threshold": 6000,
+        "compression": 60
       },
       "timelapse": {
         "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={driveway_password}",
@@ -33,7 +34,8 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,
-        "restart_threshold": 6000
+        "restart_threshold": 6000,
+        "compression": 60
       },
       "timelapse": {
         "image_url": "https://192.168.1.22/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={front_password}",
@@ -53,7 +55,8 @@
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,
-        "restart_threshold": 6000
+        "restart_threshold": 6000,
+        "compression": 60
       },
       "timelapse": {
         "image_url": "https://192.168.1.23/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={garden_password}",
