@@ -1,12 +1,11 @@
 from datetime import datetime, timedelta
 import time
-import urllib.request
-import ssl
 import threading
 from os import listdir
 import subprocess, io
 import os
 import psutil
+import utils
 
 class TimelapseCamera(object):
     def __init__(
@@ -38,11 +37,7 @@ class TimelapseCamera(object):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filename = f"{timestamp}_{self._camera_name}"
         start = time.time()
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-        with urllib.request.urlopen(self._camera_image_url, context=ctx) as u, open(f"{self._temp_file_path}{filename}.jpeg", 'wb') as f:
-            f.write(u.read())
+        utils.urlopen_to_file(self._logger, self._camera_image_url, f"{self._temp_file_path}{filename}.jpeg", 4)
         elapsed = time.time() - start
         self._logger.info( f"Capture timelapse image done for {self._camera_name} in {elapsed:.1f}s")
 

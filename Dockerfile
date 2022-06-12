@@ -18,12 +18,13 @@ CMD /run.sh
 COPY __init__.py \
     capture_camera.py \
     config.json \
-    secrets.json \
     file_manager.py \
     nvr_server.py \
     run.sh \
+    secrets.json \
     stream_camera.py \
     timelapse_camera.py \
+    utils.py \
     /
 
 RUN chmod a+x /run.sh

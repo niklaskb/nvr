@@ -192,7 +192,7 @@ def get_timelapses():
         day = timelapse_file_no_ext[6:8]
         camera_name = timelapse_file_no_ext[9:]
 
-        html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}-{month}-{day}: {camera_name}</a></li>'
+        html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}-{month}-{day}: {camera_display_names[camera_name]}</a></li>'
 
     html += """
         </ul>
