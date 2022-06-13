@@ -295,7 +295,6 @@ def _replace_secrets(secrets, value):
 
 def _schedule(timelapse_camera):
     schedule.every().minute.at(":00").do(timelapse_camera.capture_image_async)
-    schedule.every().minute.at(":30").do(timelapse_camera.capture_image_async)
     schedule.every().day.at("02:02:02").do(timelapse_camera.build_video)
 
 def _run_schedule():

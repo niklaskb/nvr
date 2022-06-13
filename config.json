@@ -18,7 +18,7 @@
       },
       "timelapse": {
         "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={driveway_password}",
-        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30 -vf scale=1920:1080"
       }
     },
     {
@@ -39,7 +39,7 @@
       },
       "timelapse": {
         "image_url": "https://192.168.1.22/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={front_password}",
-        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30 -vf scale=1280:960"
       }
     },
     {
@@ -60,7 +60,7 @@
       },
       "timelapse": {
         "image_url": "https://192.168.1.23/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={garden_password}",
-        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30"
+        "ffmpeg_options": "-c:v libx264 -preset slow -crf 30 -vf scale=1280:960"
       }
     }
   ],
