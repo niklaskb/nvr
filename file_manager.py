@@ -1,6 +1,6 @@
 from datetime import datetime
-from os import listdir
 import os
+import pytz
 
 
 class FileManager(object):
@@ -11,9 +11,55 @@ class FileManager(object):
         self._purge_video_days = purge_video_days
         self._purge_image_days = purge_image_days
 
+    def get_mapped_recordings(self):
+        image_files = list(filter(lambda x: x.endswith(".jpeg"), os.listdir(self._image_file_path)))
+        video_files = list(filter(lambda x: x.endswith(".mp4"), os.listdir(self._video_file_path)))
+        video_files.sort(reverse=True)
+
+        unique_prefixes = []
+        for name in image_files:
+            prefix = name[0:15]
+            if prefix not in unique_prefixes:
+                unique_prefixes.append(prefix)
+
+
+        recordings = []
+        for video_file in video_files:
+            timestamp = video_file[0:15]
+            camera_name = os.path.splitext(video_file)[0][16:]
+            matching_image_files = list(
+                filter(lambda x: x.startswith(timestamp) and x.endswith(f"{camera_name}.jpeg"), image_files)
+            )
+            matching_image_files.sort(reverse=True)
+            print(f"image_files {image_files}")
+            print(f"timestamp {timestamp}")
+            print(f"camera_name {camera_name}")
+            print(f"matching_image_files {matching_image_files}")
+
+            image_file = None
+            extra_images = []
+            for matching_image_file in matching_image_files:
+                image_timestamp = matching_image_file[16:31]
+                if image_file is None:
+                    image_file = matching_image_file
+                else:
+                    extra_images.append({
+                        "timestamp": datetime.strptime(image_timestamp, "%Y%m%d_%H%M%S"),
+                        "filename": matching_image_file,
+                    })
+
+            recordings.append({
+                "camera_name": camera_name,
+                "timestamp": datetime.strptime(timestamp, "%Y%m%d_%H%M%S"),
+                "video_filename": video_file,
+                "image_filename": image_file,
+                "extra_images": extra_images,
+            })
+        return recordings
+
     def remove_old_videos(self):
         files = list(
-            filter(lambda x: x.endswith(".mp4"), listdir(self._video_file_path))
+            filter(lambda x: x.endswith(".mp4"), os.listdir(self._video_file_path))
         )
         for file in files:
             time = datetime.strptime(file[0:15], "%Y%m%d_%H%M%S")
@@ -24,7 +70,7 @@ class FileManager(object):
 
     def remove_old_images(self):
         files = list(
-            filter(lambda x: x.endswith(".jpeg"), listdir(self._image_file_path))
+            filter(lambda x: x.endswith(".jpeg"), os.listdir(self._image_file_path))
         )
         for file in files:
             time = datetime.strptime(file[0:15], "%Y%m%d_%H%M%S")
@@ -46,7 +92,7 @@ class FileManager(object):
         return self._get_latest_file(".mp4", self._video_file_path)
 
     def _get_latest_file(self, endswith, file_path):
-        files = list(filter(lambda x: x.endswith(endswith), listdir(file_path)))
+        files = list(filter(lambda x: x.endswith(endswith), os.listdir(file_path)))
         files.sort(reverse=True)
         if len(files) > 0:
             return files[0]

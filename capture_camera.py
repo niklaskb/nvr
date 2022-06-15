@@ -30,6 +30,7 @@ class CaptureCamera(object):
         self._capture_timeout = capture_timeout
         self._capture_video_process = None
         self._event_timestamp = None
+        self._first_event_timestamp = None
         self._capturing = False
 
     def _capture_video(self):
@@ -58,7 +59,7 @@ class CaptureCamera(object):
             self.capture_end()
 
     def _capture_image(self):
-        filename = f"{self._event_timestamp}_{self._camera_name}"
+        filename = f"{self._first_event_timestamp}_{self._event_timestamp}_{self._camera_name}"
         start = time.time()
         utils.urlopen_to_file(self._logger, self._camera_image_url, f"{self._image_file_path}{filename}.jpeg", 8)
         elapsed = time.time() - start
@@ -77,6 +78,8 @@ class CaptureCamera(object):
     def capture_keep(self, timestamp):
         if not self._capturing:
             return
+        if self._first_event_timestamp is None:
+            self._first_event_timestamp = timestamp
         self._event_timestamp = timestamp
         image_thread = threading.Thread(target=self._capture_image, args=(), kwargs={})
         image_thread.start()
@@ -96,16 +99,17 @@ class CaptureCamera(object):
             os.killpg(pgid, signal.SIGTERM)
         
         
-        if self._event_timestamp:
+        if self._first_event_timestamp is not None:
             self._logger.info(
                 f"Keeping captured video file for {self._camera_name}"
             )
-            filename = f"{self._event_timestamp}_{self._camera_name}"
+            filename = f"{self._first_event_timestamp}_{self._camera_name}"
             os.rename(
                 f"{self._temp_file_path}{self._camera_name}_tmp.mp4",
                 f"{self._video_file_path}{filename}.mp4",
             )
             self._event_timestamp = None
+            self._first_event_timestamp = None
         else:
             self._logger.info(f"Discarding captured video file for {self._camera_name}")
             os.remove(f"{self._temp_file_path}{self._camera_name}_tmp.mp4")

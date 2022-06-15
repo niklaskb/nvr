@@ -35,11 +35,11 @@ def _get_lastchanged():
     image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
     image_files.sort(reverse=True)
     image_file_no_ext = path.splitext(image_files[0])[0]
-    return image_file_no_ext;
+    return image_file_no_ext
 
 @app.route("/recordings/lastchanged")
 def get_recordings_lastchanged():
-    return _get_lastchanged();
+    return _get_lastchanged()
 
 @app.route("/recordings")
 def get_recordings():
@@ -96,48 +96,19 @@ def get_recordings():
     file_manager.remove_old_images()
 
     timezone = pytz.timezone("Europe/Stockholm")
-    image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
-    image_files_no_ext = [path.splitext(x)[0] for x in image_files]
 
-    video_files = list(filter(lambda x: x.endswith(".mp4"), listdir(video_file_path)))
-    video_files_no_ext = [path.splitext(x)[0] for x in video_files]
+    recordings = file_manager.get_mapped_recordings()
+    print(recordings)
 
-    image_files_no_ext.sort(reverse=True)
+    for recording in recordings:
+        local_timestamp = recording["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+        camera_display_name = camera_display_names[recording["camera_name"]]
 
-    unique_prefixes = []
-    for name in image_files_no_ext:
-        prefix = name[0:15]
-        if prefix not in unique_prefixes:
-            unique_prefixes.append(prefix)
-
-    for unique_prefix in unique_prefixes:
-        time = datetime.strptime(unique_prefix, "%Y%m%d_%H%M%S")
-        local_time = (
-            time.replace(tzinfo=pytz.utc)
-            .astimezone(timezone)
-            .strftime("%Y-%m-%d %H:%M:%S")
-        )
-
-        matching_images = list(
-            filter(lambda x: x.startswith(unique_prefix), image_files_no_ext)
-        )
-        matching_videos = list(
-            filter(lambda x: x.startswith(unique_prefix), video_files_no_ext)
-        )
-
-        html += f"<li>{local_time}<br/>"
-        first = True
-        for matching_image in matching_images:
-            camera_name = matching_image[16:]
-            if first:
-                first = False
-            else:
-                html += ", "
-
-            if matching_image in matching_videos:
-                html += f'<a target="_blank" href="./videos/{matching_image}.mp4"><img style="width:90%;" src="./images/{matching_image}.jpeg" alt="{camera_display_names[camera_name]}" /></a>'
-            else:
-                html += f'<img style="width:90%;" src="./images/{matching_image}.jpeg" alt="{camera_display_names[camera_name]}" />'
+        html += f"<li>{local_timestamp}<br/>"
+        html += f'<a target="_blank" href="./videos/{recording["video_filename"]}"><img style="width:90%;" src="./images/{recording["image_filename"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
+        for extra_images in recording["extra_images"]:
+            image_local_time = extra_images["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+            html += f'<a target="_blank" href="./images/{recording["image_filename"]}"><img style="width:45%;" src="./images/{extra_images["filename"]}" alt="{camera_display_name} - {image_local_time}" /></a>'
         html += "</li>"
     html += """
         </ul>
