@@ -97,8 +97,14 @@ def get_recordings():
 
     timezone = pytz.timezone("Europe/Stockholm")
 
-    recordings = file_manager.get_mapped_recordings()
-    print(recordings)
+    recordings, orphan_images = file_manager.get_mapped_recordings()
+
+    for orphan_image in orphan_images:
+        local_timestamp = orphan_image["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+        camera_display_name = camera_display_names[orphan_image["camera_name"]]
+        html += f"<li>{local_timestamp}<br/>"
+        html += f'<img style="width:90%; border: 2px solid red;" src="./images/{orphan_image["image_filename"]}" alt="{camera_display_name} - {local_timestamp}" />'
+        html += "</li>"
 
     for recording in recordings:
         local_timestamp = recording["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
@@ -108,7 +114,7 @@ def get_recordings():
         html += f'<a target="_blank" href="./videos/{recording["video_filename"]}"><img style="width:90%;" src="./images/{recording["image_filename"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
         for extra_images in recording["extra_images"]:
             image_local_time = extra_images["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
-            html += f'<a target="_blank" href="./images/{recording["image_filename"]}"><img style="width:45%;" src="./images/{extra_images["filename"]}" alt="{camera_display_name} - {image_local_time}" /></a>'
+            html += f'<img style="width:45%;" src="./images/{extra_images["filename"]}" alt="{camera_display_name} - {image_local_time}" />'
         html += "</li>"
     html += """
         </ul>
