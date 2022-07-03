@@ -35,7 +35,7 @@ class CaptureCamera(object):
 
     def _capture_video(self):
         start = time.time()
-        command = f'ffmpeg -loglevel error -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}{self._camera_name}_tmp.mp4'
+        command = f'ffmpeg -loglevel warning -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}{self._camera_name}_tmp.mp4'
         self._logger.info(
             f"Launching capture video process for {self._camera_name}: {command}"
         )
@@ -101,7 +101,7 @@ class CaptureCamera(object):
         
         if self._first_event_timestamp is not None:
             self._logger.info(
-                f"Keeping captured video file for {self._camera_name}"
+                f"Keeping captured video file ({self._first_event_timestamp}) for {self._camera_name}"
             )
             filename = f"{self._first_event_timestamp}_{self._camera_name}"
             os.rename(
@@ -111,5 +111,5 @@ class CaptureCamera(object):
             self._event_timestamp = None
             self._first_event_timestamp = None
         else:
-            self._logger.info(f"Discarding captured video file for {self._camera_name}")
+            self._logger.info(f"Discarding captured video file ({self._first_event_timestamp}) for {self._camera_name}")
             os.remove(f"{self._temp_file_path}{self._camera_name}_tmp.mp4")

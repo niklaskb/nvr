@@ -9,7 +9,7 @@
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -tag:v hvc1 -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
-        "url": "rtsp://admin:{driveway_password}@192.168.1.21:554/h264Preview_01_sub",
+        "url": "rtmp://192.168.1.21/bcs/channel0_sub.bcs?channel=0&stream=0&user=admin&password={driveway_password}",
         "frame_sleep": 0.1,
         "width": 640,
         "height": 360,
@@ -30,7 +30,7 @@
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
-        "url": "rtsp://admin:{front_password}@192.168.1.22:554/h264Preview_01_sub",
+        "url": "rtmp://192.168.1.22/bcs/channel0_sub.bcs?channel=0&stream=0&user=admin&password={front_password}",
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,
@@ -51,7 +51,7 @@
         "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
-        "url": "rtsp://admin:{garden_password}@192.168.1.23:554/h264Preview_01_sub",
+        "url": "rtmp://192.168.1.23/bcs/channel0_sub.bcs?channel=0&stream=0&user=admin&password={garden_password}",
         "frame_sleep": 0.1,
         "width": 640,
         "height": 480,

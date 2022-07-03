@@ -32,10 +32,10 @@ def require_internal(func):
 
 
 def _get_lastchanged():
-    image_files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
-    image_files.sort(reverse=True)
-    image_file_no_ext = path.splitext(image_files[0])[0]
-    return image_file_no_ext
+    files = list(filter(lambda x: x.endswith(".jpeg"), listdir(image_file_path)))
+    files.extend(list(filter(lambda x: x.endswith(".mp4"), listdir(video_file_path))))
+    files.sort(reverse=True)
+    return files[0]
 
 @app.route("/recordings/lastchanged")
 def get_recordings_lastchanged():
