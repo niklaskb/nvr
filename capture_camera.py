@@ -103,11 +103,13 @@ class CaptureCamera(object):
             self._logger.info(
                 f"Keeping captured video file ({self._first_event_timestamp}) for {self._camera_name}"
             )
-            filename = f"{self._first_event_timestamp}_{self._camera_name}"
-            os.rename(
-                f"{self._temp_file_path}{self._camera_name}_tmp.mp4",
-                f"{self._video_file_path}{filename}.mp4",
-            )
+            filename = f"{self._video_file_path}{self._first_event_timestamp}_{self._camera_name}.mp4"
+            temp_file = f"{self._temp_file_path}{self._camera_name}_tmp.mp4"
+            if os.path.isfile(temp_file):
+                os.rename(temp_file, filename)
+            else:
+                 self._logger.error(f"No capture output produced ({self._first_event_timestamp}) for {self._camera_name}")
+
             self._event_timestamp = None
             self._first_event_timestamp = None
         else:
