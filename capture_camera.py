@@ -98,20 +98,18 @@ class CaptureCamera(object):
             self._logger.info(f"Terminating video process for {self._camera_name}")
             os.killpg(pgid, signal.SIGTERM)
         
-        
-        if self._first_event_timestamp is not None:
+        temp_file = f"{self._temp_file_path}{self._camera_name}_tmp.mp4"
+        if not os.path.isfile(temp_file):
+            self._logger.error(f"No capture output produced ({self._first_event_timestamp}) for {self._camera_name}")
+        elif self._first_event_timestamp is not None:
             self._logger.info(
                 f"Keeping captured video file ({self._first_event_timestamp}) for {self._camera_name}"
             )
             filename = f"{self._video_file_path}{self._first_event_timestamp}_{self._camera_name}.mp4"
-            temp_file = f"{self._temp_file_path}{self._camera_name}_tmp.mp4"
-            if os.path.isfile(temp_file):
-                os.rename(temp_file, filename)
-            else:
-                 self._logger.error(f"No capture output produced ({self._first_event_timestamp}) for {self._camera_name}")
-
+            os.rename(temp_file, filename)
+            
             self._event_timestamp = None
             self._first_event_timestamp = None
         else:
-            self._logger.info(f"Discarding captured video file ({self._first_event_timestamp}) for {self._camera_name}")
-            os.remove(f"{self._temp_file_path}{self._camera_name}_tmp.mp4")
+            self._logger.info(f"Discarding captured video file for {self._camera_name}")
+            os.remove(temp_file)
