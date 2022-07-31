@@ -35,7 +35,11 @@ class CaptureCamera(object):
 
     def _capture_video(self):
         start = time.time()
-        command = f'ffmpeg -loglevel warning -nostats -y -rtsp_transport tcp -i {self._camera_url} -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}{self._camera_name}_tmp.mp4'
+        rtsp_options = ""
+        if self._camera_url.startswith("rtsp"):
+            rtsp_options = "-rtsp_transport tcp"
+
+        command = f'ffmpeg -loglevel warning -nostats -y {rtsp_options} -i "{self._camera_url}" -t {self._capture_timeout} -metadata title="" {self._ffmpeg_options} {self._temp_file_path}{self._camera_name}_tmp.mp4'
         self._logger.info(
             f"Launching capture video process for {self._camera_name}: {command}"
         )

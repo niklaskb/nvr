@@ -16,7 +16,6 @@ import threading
 import time
 
 app = Flask(__name__)
-app.logger.setLevel(logging.INFO)
 
 
 def require_internal(func):
@@ -280,6 +279,11 @@ def _run_schedule():
         time.sleep(0.5)
 
 if __name__ == "__main__":
+    app.logger.setLevel(logging.INFO)
+    handler = logging.FileHandler("nvr.log")
+    handler.setFormatter(app.logger.handlers[0].formatter)
+    app.logger.addHandler(handler)
+
     with open("config.json", "r") as f:
         config = json.load(f)
 
@@ -345,7 +349,5 @@ if __name__ == "__main__":
         target=_run_schedule
     )
     schedule_thread.start()
-
-    app.logger.info(f"Init done")
 
     app.run(host="0.0.0.0")
