@@ -4,9 +4,11 @@
       "name": "driveway",
       "display_name": "Uppfart",
       "capture": {
-        "url": "rtsp://admin:{driveway_password}@192.168.1.21:554/h265Preview_01_main",
+        "url": "rtmp://192.168.1.21/bcs/channel0_sub.bcs?channel=0&stream=0&user=admin&password={driveway_password}",
+        "url-backup": "rtsp://admin:{driveway_password}@192.168.1.21:554/h265Preview_01_main",
         "image_url": "https://192.168.1.21/cgi-bin/api.cgi?cmd=Snap&channel=0&user=admin&password={driveway_password}&width=640&height=360",
-        "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -tag:v hvc1 -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
+        "ffmpeg_options": "-f mp4 -c copy -bsf:a aac_adtstoasc -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov",
+        "ffmpeg_options-backup": "-f mp4 -c copy -bsf:a aac_adtstoasc -tag:v hvc1 -movflags frag_keyframe+separate_moof+default_base_moof+empty_moov"
       },
       "stream": {
         "url": "rtmp://192.168.1.21/bcs/channel0_sub.bcs?channel=0&stream=0&user=admin&password={driveway_password}",
