@@ -68,10 +68,11 @@
   ],
   "video_file_path": "./camera/videos/",
   "image_file_path": "./camera/images/",
-  "timelapse_file_path": "./camera/timelapse/",
+  "timelapse_video_file_path": "./camera/timelapse/videos/",
   "temp_video_file_path": "./camera/temp/videos/",
-  "temp_timelapse_file_path": "./camera/temp/timelapse/",
+  "timelapse_image_file_path": "./camera/timelapse/images/",
   "capture_timeout": 3600,
   "purge_video_days": 7,
-  "purge_image_days": 7
+  "purge_image_days": 7,
+  "timelapse_hours": [3, 7, 11, 15, 19]
 }

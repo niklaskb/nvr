@@ -14,6 +14,7 @@ from timelapse_camera import TimelapseCamera
 import schedule
 import threading
 import time
+from datetime import timezone
 
 app = Flask(__name__)
 
@@ -156,7 +157,7 @@ def get_timelapses():
         <ul>
 """
     timezone = pytz.timezone("Europe/Stockholm")
-    timelapse_files = list(filter(lambda x: x.endswith(".mp4"), listdir(timelapse_file_path)))
+    timelapse_files = list(filter(lambda x: x.endswith(".mp4"), listdir(timelapse_video_file_path)))
     timelapse_files.sort(reverse=True)
 
 
@@ -164,11 +165,10 @@ def get_timelapses():
     for timelapse_file in timelapse_files:
         timelapse_file_no_ext = path.splitext(timelapse_file)[0]
         year = timelapse_file_no_ext[0:4]
-        month = timelapse_file_no_ext[4:6]
-        day = timelapse_file_no_ext[6:8]
-        camera_name = timelapse_file_no_ext[9:]
+        hour = timelapse_file_no_ext[5:7]
+        camera_name = timelapse_file_no_ext[8:]
 
-        html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}-{month}-{day}: {camera_display_names[camera_name]}</a></li>'
+        html += f'<li><a target="_blank" href="./timelapses/{timelapse_file}">{year}: {camera_display_names[camera_name]} {hour} UTC</a></li>'
 
     html += """
         </ul>
@@ -198,7 +198,7 @@ def get_cameras_images_latest():
 
 @app.route("/timelapses/<path:file>")
 def get_timelapses_file(file):
-    return send_from_directory(timelapse_file_path, file, max_age=604800)
+    return send_from_directory(timelapse_video_file_path, file, max_age=604800)
 
 def http_stream(stream_camera):
     while True:
@@ -240,7 +240,7 @@ def get_cameras_camera_event_end(camera_name):
 def get_cameras_camera_event_keep(camera_name):
     if camera_name not in capture_cameras:
         abort(404)
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
     capture_cameras[camera_name].capture_keep(timestamp)
     return "OK"
 
@@ -251,7 +251,7 @@ def get_cameras_camera_capture_start(camera_name):
     if camera_name not in capture_cameras:
         abort(404)
     capture_cameras[camera_name].capture_start()
-    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
     capture_cameras[camera_name].capture_keep(timestamp)
     return "OK"
 
@@ -269,14 +269,14 @@ def _replace_secrets(secrets, value):
         value = value.replace(f"{{{secret_key}}}", secret_value)
     return value
 
-def _schedule(timelapse_camera):
-    schedule.every().minute.at(":00").do(timelapse_camera.capture_image_async)
-    schedule.every().day.at("02:02:02").do(timelapse_camera.build_video)
+def _schedule(timelapse_camera, i):
+    schedule.every().hour.at(":00").do(timelapse_camera.capture_image_async)
+    schedule.every().day.at(f"{i:02}:01:00").do(timelapse_camera.build_videos)
 
 def _run_schedule():
     while True:
         schedule.run_pending()
-        time.sleep(0.5)
+        time.sleep(1)
 
 if __name__ == "__main__":
     app.logger.setLevel(logging.INFO)
@@ -291,7 +291,7 @@ if __name__ == "__main__":
         secrets = json.load(f)
 
     video_file_path = config["video_file_path"]
-    timelapse_file_path = config["timelapse_file_path"]
+    timelapse_video_file_path = config["timelapse_video_file_path"]
     image_file_path = config["image_file_path"]
 
     stream_cameras = {}
@@ -299,6 +299,7 @@ if __name__ == "__main__":
     camera_display_names = {}
     timelapse_cameras = {}
 
+    i = 0
     for camera_config in config["cameras"]:
         camera_display_names[camera_config["name"]] = camera_config["display_name"]
         stream_cameras[camera_config["name"]] = StreamCamera(
@@ -329,13 +330,15 @@ if __name__ == "__main__":
             camera_config["name"],
             _replace_secrets(secrets, camera_config["timelapse"]["image_url"]),
             camera_config["timelapse"]["ffmpeg_options"],
-            config["timelapse_file_path"],
-            config["temp_timelapse_file_path"],
+            config["timelapse_video_file_path"],
+            config["timelapse_image_file_path"],
+            config["timelapse_hours"],
         )
 
         timelapse_cameras[camera_config["name"]] = timelapse_camera
 
-        _schedule(timelapse_camera)
+        _schedule(timelapse_camera, i)
+        i = i + 1
 
     file_manager = FileManager(
         app.logger,

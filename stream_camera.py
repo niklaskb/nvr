@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import logging
 import sys
+from datetime import timezone
 
 
 class StreamCamera(object):
@@ -141,10 +142,10 @@ class _InternalStreamCamera(object):
     def stream(self):
         while True:
             if not self._streaming:
-                if not self._loading and (self._last_init_timestamp is None or (datetime.now() - self._last_init_timestamp).seconds > 30):
+                if not self._loading and (self._last_init_timestamp is None or (datetime.now(tz=timezone.utc) - self._last_init_timestamp).seconds > 30):
                     self._loading = True
                     self._static_frame = self._create_loading_image()
-                    self._last_init_timestamp = datetime.now()
+                    self._last_init_timestamp = datetime.now(tz=timezone.utc)
                     self._init_stream_thread = threading.Thread(
                         target=self._init_stream
                     )

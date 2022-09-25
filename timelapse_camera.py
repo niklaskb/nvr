@@ -6,6 +6,7 @@ import subprocess, io
 import os
 import psutil
 import utils
+from datetime import timezone
 
 class TimelapseCamera(object):
     def __init__(
@@ -15,31 +16,42 @@ class TimelapseCamera(object):
         camera_image_url,
         ffmpeg_options,
         video_file_path,
-        temp_file_path,
+        image_file_path,
+        hours,
     ):
         self._logger = logger
         self._camera_name = camera_name
         self._camera_image_url = camera_image_url
         self._ffmpeg_options = ffmpeg_options
         self._video_file_path = video_file_path
-        self._temp_file_path = temp_file_path
+        self._image_file_path = image_file_path
+        self._hours = hours
 
         self._capture_image_thread = None
 
     def capture_image_async(self):
+        self._logger.info(f"Triggered timelapse for {self._camera_name}")
         self._capture_image_thread = threading.Thread(
             target=self._capture_image
         )
         self._capture_image_thread.start()
 
     def _capture_image(self):
-        self._logger.debug( f"Starting timelapse image capture for {self._camera_name}")
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{timestamp}_{self._camera_name}"
+        hour = int(datetime.now(tz=timezone.utc).strftime("%H"))
+
+        if not hour in self._hours:
+            self._logger.info(f"Timelapse not configured for hour {hour}, skipping")
+            return
+
+        padded_hour = f'{hour:02}'
+        self._logger.info(f"Starting timelapse image capture for {self._camera_name} and hour {padded_hour}")
+
+        timestamp = datetime.now(tz=timezone.utc).strftime("%Y%m%d_%H%M%S")
+        filename = f"{timestamp}_{padded_hour}_{self._camera_name}"
         start = time.time()
-        utils.urlopen_to_file(self._logger, self._camera_image_url, f"{self._temp_file_path}{filename}.jpeg", 4)
+        utils.urlopen_to_file(self._logger, self._camera_image_url, f"{self._image_file_path}{filename}.jpeg", 4)
         elapsed = time.time() - start
-        self._logger.info( f"Capture timelapse image done for {self._camera_name} in {elapsed:.1f}s")
+        self._logger.info(f"Capture timelapse image done for {self._camera_name} in {elapsed:.1f}s")
 
     def _preexec_fn(self):
         try:
@@ -50,9 +62,9 @@ class TimelapseCamera(object):
         except Exception as err:
             self._logger.error(f"Failed execute preexec_fn: {err}")
         
-    def _build_video(self, date):
+    def _build_video(self, year, padded_hour):
         start = time.time()
-        command = f'ffmpeg -loglevel error -nostats -y -framerate 24 -pattern_type  glob -i "{self._temp_file_path}{date}_*_{self._camera_name}.jpeg" -metadata title="" {self._ffmpeg_options} {self._video_file_path}{date}_{self._camera_name}.mp4'
+        command = f'ffmpeg -loglevel error -nostats -y -framerate 7 -pattern_type  glob -i "{self._image_file_path}{year}*_{padded_hour}_{self._camera_name}.jpeg" -metadata title="" {self._ffmpeg_options} {self._video_file_path}{year}_{padded_hour}_{self._camera_name}.mp4'
         self._logger.info(
             f"Launching timelapse video build process for {self._camera_name}: {command}"
         )
@@ -71,17 +83,18 @@ class TimelapseCamera(object):
             f"Timelapse video build process for {self._camera_name} done in {elapsed:.1f}s"
         )
 
-    def build_video(self):
-        yesterdays_date = (datetime.now() - timedelta(days=1)).strftime("%Y%m%d")
+    def build_videos(self):
+        year = (datetime.now(tz=timezone.utc) - timedelta(days=1)).strftime("%Y")
+        old_year = (datetime.now(tz=timezone.utc) - timedelta(days=2)).strftime("%Y")
 
-        self._build_video(yesterdays_date)
+        for hour in range(0, 23):
+            padded_hour = f'{hour:02}'
+            files = list(
+                filter(lambda x: (x.startswith(old_year) and x.endswith(f"_{padded_hour}_{self._camera_name}.jpeg")), listdir(self._image_file_path))
+            )
+            if len(files) > 0:
+                self._build_video(year, padded_hour)
 
-        files = list(
-            filter(lambda x: x.endswith(".jpeg"), listdir(self._temp_file_path))
-        )
-
-        if os.path.isfile(f"{self._video_file_path}{yesterdays_date}_{self._camera_name}.mp4"):
-            for file in files:
-                d = file.rsplit("_", 2)[1]
-                if d == yesterdays_date:
-                    os.remove(f"{self._temp_file_path}/{file}")
+                if year != old_year and os.path.isfile(f"{self._video_file_path}{year}_{padded_hour}_{self._camera_name}.mp4"):
+                    for file in files:
+                        os.remove(f"{self._image_file_path}/{file}")

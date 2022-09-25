@@ -1,11 +1,11 @@
 FROM ubuntu:22.04
 
-RUN apt update && apt upgrade -y
-
-RUN DEBIAN_FRONTEND=noninteractive apt install -y \
+RUN apt update && apt upgrade -y && \
+    DEBIAN_FRONTEND=noninteractive apt install -y \
     ffmpeg \
     python3-opencv \
-    python3-pip
+    python3-pip \
+    git
 
 COPY requirements.txt /
 
