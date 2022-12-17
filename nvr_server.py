@@ -15,6 +15,7 @@ import schedule
 import threading
 import time
 from datetime import timezone
+import urllib.request, json 
 
 app = Flask(__name__)
 
@@ -95,27 +96,83 @@ def get_recordings():
     file_manager.remove_old_videos()
     file_manager.remove_old_images()
 
-    timezone = pytz.timezone("Europe/Stockholm")
+    tz = pytz.timezone(config["timezone"])
 
     recordings, orphan_images = file_manager.get_mapped_recordings()
 
     for orphan_image in orphan_images:
-        local_timestamp = orphan_image["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+        local_timestamp = orphan_image["timestamp"].replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         camera_display_name = camera_display_names[orphan_image["camera_name"]]
         html += f"<li>{local_timestamp}<br/>"
         html += f'<img style="width:90%; border: 2px solid red;" src="./images/{orphan_image["image_filename"]}" alt="{camera_display_name} - {local_timestamp}" />'
         html += "</li>"
 
     for recording in recordings:
-        local_timestamp = recording["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+        local_timestamp = recording["timestamp"].replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
         camera_display_name = camera_display_names[recording["camera_name"]]
 
         html += f"<li>{local_timestamp}<br/>"
         html += f'<a target="_blank" href="./videos/{recording["video_filename"]}"><img style="width:90%;" src="./images/{recording["image_filename"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
         for extra_images in recording["extra_images"]:
-            image_local_time = extra_images["timestamp"].replace(tzinfo=pytz.utc).astimezone(timezone).strftime("%Y-%m-%d %H:%M:%S")
+            image_local_time = extra_images["timestamp"].replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
             html += f'<img style="width:45%;" src="./images/{extra_images["filename"]}" alt="{camera_display_name} - {image_local_time}" />'
         html += "</li>"
+    html += """
+        </ul>
+    </body>
+</html>
+"""
+    return html
+
+
+@app.route("/events")
+def get_events():
+    html = f"""
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Events</title>
+        <style>
+            body {{
+                background: #FFF;
+                color: #1c1c1c;
+                font-family: Roboto,sans-serif;
+                font-weight: 400;
+            }}
+            a {{
+                color: #1c1c1c;
+                text-decoration: none;
+            }}
+            a:hover, a:active {{
+                text-decoration: underline;
+            }}
+            @media (prefers-color-scheme: dark) {{
+                body, a {{
+                    background: #1c1c1c;
+                    color: #FFF;
+                }}
+            }}
+        </style>
+    </head>
+    <body>
+        <ul>
+"""
+
+    with urllib.request.urlopen(f"{frigate_base_url}/api/events?include_thumbnails=0") as url:
+        events = json.load(url)
+        tz = pytz.timezone(config["timezone"])
+        for event in events:
+            local_timestamp = datetime.fromtimestamp(event["start_time"]).replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+            camera_display_name = camera_display_names[event["camera"].removeprefix("camera_")]
+
+            html += f"<li>{local_timestamp}<br/>"
+            if event["has_clip"] and event["has_snapshot"]:
+                html += f'<a target="_blank" href="./clips/{event["id"]}"><img style="width:90%;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
+            elif event["has_snapshot"]:
+                html += f'<img style="width:90%; border: 2px solid red;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" />'
+            else:
+                html += f'{camera_display_name} - {local_timestamp}'
+            html += "</li>"
     html += """
         </ul>
     </body>
@@ -156,7 +213,6 @@ def get_timelapses():
     <body>
         <ul>
 """
-    timezone = pytz.timezone("Europe/Stockholm")
     timelapse_files = list(filter(lambda x: x.endswith(".mp4"), listdir(timelapse_video_file_path)))
     timelapse_files.sort(reverse=True)
 
@@ -176,6 +232,22 @@ def get_timelapses():
 </html>
 """
     return html
+
+
+@app.route("/clips/<path:event_id>")
+def get_clips(event_id):
+    with urllib.request.urlopen(f"{frigate_base_url}/api/events/{event_id}/clip.mp4") as response:
+        contents = response.read()
+        info = response.info()
+        return Response(contents, mimetype=info.get_content_type())
+
+
+@app.route("/snapshots/<path:event_id>")
+def get_snapshots(event_id):
+    with urllib.request.urlopen(f"{frigate_base_url}/api/events/{event_id}/snapshot.jpg") as response:
+        contents = response.read()
+        info = response.info()
+        return Response(contents, mimetype=info.get_content_type())
 
 
 @app.route("/videos/<path:file>")
@@ -293,6 +365,7 @@ if __name__ == "__main__":
     video_file_path = config["video_file_path"]
     timelapse_video_file_path = config["timelapse_video_file_path"]
     image_file_path = config["image_file_path"]
+    frigate_base_url = config["frigate_base_url"]
 
     stream_cameras = {}
     capture_cameras = {}
