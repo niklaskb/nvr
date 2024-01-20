@@ -162,17 +162,18 @@ def get_events():
         events = json.load(url)
         tz = pytz.timezone(config["timezone"])
         for event in events:
-            local_timestamp = datetime.fromtimestamp(event["start_time"]).replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
-            camera_display_name = camera_display_names[event["camera"].removeprefix("camera_")]
+            if event["label"] == "person":
+                local_timestamp = datetime.fromtimestamp(event["start_time"]).replace(tzinfo=pytz.utc).astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
+                camera_display_name = camera_display_names[event["camera"].removeprefix("camera_")]
 
-            html += f"<li>{local_timestamp}<br/>"
-            if event["has_clip"] and event["has_snapshot"]:
-                html += f'<a target="_blank" href="./clips/{event["id"]}"><img style="width:90%;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
-            elif event["has_snapshot"]:
-                html += f'<img style="width:90%; border: 2px solid red;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" />'
-            else:
-                html += f'{camera_display_name} - {local_timestamp}'
-            html += "</li>"
+                html += f"<li>{local_timestamp}<br/>"
+                if event["has_clip"] and event["has_snapshot"]:
+                    html += f'<a target="_blank" href="./clips/{event["id"]}"><img style="width:90%;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" /></a>'
+                elif event["has_snapshot"]:
+                    html += f'<img style="width:90%; border: 2px solid red;" src="./snapshots/{event["id"]}" alt="{camera_display_name} - {local_timestamp}" />'
+                else:
+                    html += f'{camera_display_name} - {local_timestamp}'
+                html += "</li>"
     html += """
         </ul>
     </body>
